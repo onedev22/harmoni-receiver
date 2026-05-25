@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Harmoni TV Receiver</title>
+  <!-- Google Cast Receiver SDK v3 -->
+  <script src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary-glow: rgba(99, 102, 241, 0.15);
+      --secondary-glow: rgba(244, 63, 94, 0.15);
+      --glass-bg: rgba(10, 10, 12, 0.45);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --text-main: #ffffff;
+      --text-sub: rgba(255, 255, 255, 0.6);
+      --accent: #4f46e5;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #030303;
+      color: var(--text-main);
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* ─── Animated Ambient Background (Aurora/Liquid Glass) ─── */
+    #ambient-container {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    #bg-blur-img {
+      position: absolute;
+      inset: -10%;
+      width: 120%;
+      height: 120%;
+      background-size: cover;
+      background-position: center;
+      filter: blur(80px) saturate(1.8) brightness(0.35);
+      transition: background-image 1.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+      z-index: 2;
+    }
+
+    /* Moving decorative color blobs for premium aura feel */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.4;
+      mix-blend-mode: screen;
+      animation: floatAround 25s infinite ease-in-out alternate;
+      z-index: 3;
+    }
+
+    .blob-1 {
+      top: -10%;
+      left: 10%;
+      width: 50vw;
+      height: 50vw;
+      background: radial-gradient(circle, #6366f1 0%, transparent 70%);
+    }
+
+    .blob-2 {
+      bottom: -15%;
+      right: 5%;
+      width: 60vw;
+      height: 60vw;
+      background: radial-gradient(circle, #ec4899 0%, transparent 70%);
+      animation-duration: 35s;
+      animation-delay: -5s;
+    }
+
+    .blob-3 {
+      top: 30%;
+      left: 40%;
+      width: 45vw;
+      height: 45vw;
+      background: radial-gradient(circle, #06b6d4 0%, transparent 70%);
+      animation-duration: 30s;
+      animation-delay: -12s;
+    }
+
+    @keyframes floatAround {
+      0% {
+        transform: translate(0, 0) scale(1) rotate(0deg);
+      }
+      50% {
+        transform: translate(8%, 12%) scale(1.1) rotate(180deg);
+      }
+      100% {
+        transform: translate(-5%, -8%) scale(0.9) rotate(360deg);
+      }
+    }
+
+    #bg-vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, transparent 20%, rgba(0, 0, 0, 0.85) 100%);
+      z-index: 4;
+    }
+
+    /* ─── Premium Glassmorphism Container ─── */
+    #player-card {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 72px;
+      padding: 64px 80px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(50px) saturate(180%);
+      -webkit-backdrop-filter: blur(50px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      border-radius: 40px;
+      box-shadow: 
+        0 30px 100px rgba(0, 0, 0, 0.8),
+        inset 0 1px 0px rgba(255, 255, 255, 0.12);
+      max-width: 1200px;
+      width: 85vw;
+      transform: translateY(0);
+      transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    /* ─── Album Cover with dynamic glow shadow ─── */
+    #album-art-container {
+      position: relative;
+      width: 380px;
+      height: 380px;
+      flex-shrink: 0;
+    }
+
+    #album-art-shadow {
+      position: absolute;
+      inset: 15px;
+      border-radius: 32px;
+      background-size: cover;
+      background-position: center;
+      filter: blur(35px) opacity(0.75);
+      transform: scale(0.98) translateY(12px);
+      transition: background-image 1.5s ease, transform 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+      z-index: 1;
+    }
+
+    #album-art {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      border-radius: 30px;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+      box-shadow: 0 15px 45px rgba(0,0,0,0.5);
+    }
+
+    /* Subtle pulsing effect when playing */
+    .playing #album-art {
+      animation: albumPulse 8s ease-in-out infinite alternate;
+    }
+    
+    .playing #album-art-shadow {
+      animation: albumShadowPulse 8s ease-in-out infinite alternate;
+    }
+
+    @keyframes albumPulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.025); }
+    }
+
+    @keyframes albumShadowPulse {
+      0% { transform: scale(0.98) translateY(12px); filter: blur(35px) opacity(0.75); }
+      100% { transform: scale(1.04) translateY(16px); filter: blur(40px) opacity(0.85); }
+    }
+
+    #album-art.loading {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    /* ─── Right Column (Metadata + Progress) ─── */
+    #info-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    #branding {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      opacity: 0.75;
+      margin-bottom: 20px;
+    }
+
+    #branding-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 12px #10b981;
+      transition: background-color 0.5s ease, box-shadow 0.5s ease;
+    }
+
+    #branding-dot.paused {
+      background: #f59e0b;
+      box-shadow: 0 0 12px #f59e0b;
+    }
+
+    #branding-text {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.7);
+      font-family: 'Outfit', sans-serif;
+    }
+
+    #song-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 46px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #ffffff;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    #artist-name {
+      font-size: 24px;
+      font-weight: 400;
+      color: var(--text-sub);
+      margin-bottom: 36px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ─── Progress Slider styled premium ─── */
+    #progress-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    #progress-track {
+      position: relative;
+      height: 6px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      overflow: visible;
+    }
+
+    #progress-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
+      box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+      width: 0%;
+      transition: width 1s linear;
+    }
+
+    /* Glow handler at end of progress */
+    #progress-fill::after {
+      content: '';
+      position: absolute;
+      right: -5px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 0 15px #a855f7, 0 0 6px #6366f1;
+    }
+
+    #time-row {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .time-label {
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.45);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ─── Custom Premium Controls Visualized ─── */
+    #controls-row {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .ctrl-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.3s ease;
+    }
+
+    .ctrl-badge.active {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.3);
+      color: #818cf8;
+    }
+
+    .ctrl-badge svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+      opacity: 0.6;
+    }
+
+    .ctrl-badge.active svg {
+      opacity: 1;
+    }
+
+    #play-state-indicator {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    #play-state-indicator svg {
+      width: 16px;
+      height: 16px;
+      fill: #ffffff;
+    }
+
+    #play-state-text {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ─── Casting Status Top-Right Badge ─── */
+    #status-badge {
+      position: absolute;
+      top: 40px;
+      right: 50px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 99px;
+      padding: 8px 18px 8px 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    #status-badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #818cf8;
+      box-shadow: 0 0 10px #818cf8;
+      animation: pulseDot 2s infinite ease-in-out alternate;
+    }
+
+    @keyframes pulseDot {
+      0% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+
+    #status-text {
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.85);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* ─── Idle / Welcome Screen ─── */
+    #idle-screen {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      text-align: center;
+    }
+
+    .logo-container {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Animated gradient ring around logo */
+    .logo-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      padding: 4px;
+      background: linear-gradient(135deg, #6366f1, #ec4899, #06b6d4);
+      -webkit-mask: 
+         linear-gradient(#fff 0 0) content-box, 
+         linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      animation: spinRing 8s linear infinite;
+    }
+
+    @keyframes spinRing {
+      to { transform: rotate(360deg); }
+    }
+
+    .logo-icon {
+      font-size: 42px;
+      filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.6));
+    }
+
+    #idle-screen .app-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 56px;
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      background: linear-gradient(135deg, #ffffff 40%, rgba(255, 255, 255, 0.6));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #idle-screen .tagline {
+      font-size: 20px;
+      color: rgba(255, 255, 255, 0.45);
+      font-weight: 300;
+    }
+
+    #spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 255, 255, 0.08);
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 1s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+      display: none;
+      margin-top: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ─── Visibility helpers ─── */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <!-- Dynamic blurred/aurora background -->
+  <div id="ambient-container">
+    <div id="bg-blur-img"></div>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div id="bg-vignette"></div>
+  </div>
+
+  <!-- Casting status badge (always visible) -->
+  <div id="status-badge">
+    <div id="status-badge-dot"></div>
+    <span id="status-text">Casting</span>
+  </div>
+
+  <!-- Idle / waiting screen -->
+  <div id="idle-screen">
+    <div class="logo-container">
+      <div class="logo-ring"></div>
+      <div class="logo-icon">🎵</div>
+    </div>
+    <div class="app-name">Harmoni</div>
+    <div class="tagline">Conectado y listo para reproducir</div>
+    <div id="spinner"></div>
+  </div>
+
+  <!-- Glassmorphism Player Card -->
+  <div id="player-card" class="hidden">
+    <!-- Album art with glowing blur shadow -->
+    <div id="album-art-container">
+      <div id="album-art-shadow"></div>
+      <img id="album-art" src="" alt="Cover Art" class="loading">
+    </div>
+
+    <!-- Details Column -->
+    <div id="info-column">
+      <div id="branding">
+        <div id="branding-dot"></div>
+        <span id="branding-text">Harmoni Music</span>
+      </div>
+
+      <h1 id="song-title">—</h1>
+      <h2 id="artist-name">—</h2>
+
+      <!-- Progress Slider -->
+      <div id="progress-container">
+        <div id="progress-track">
+          <div id="progress-fill"></div>
+        </div>
+        <div id="time-row">
+          <span id="time-current" class="time-label">0:00</span>
+          <span id="time-total" class="time-label">0:00</span>
+        </div>
+      </div>
+
+      <!-- Controls indicators (visual only, for state confirmation) -->
+      <div id="controls-row">
+        <!-- Playback State Badge -->
+        <div id="play-state-indicator">
+          <!-- Play icon representation -->
+          <svg id="indicator-icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="indicator-icon-pause" viewBox="0 0 24 24" class="hidden"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          <span id="play-state-text">Reproduciendo</span>
+        </div>
+
+        <!-- Shuffle visual badge -->
+        <div class="ctrl-badge" id="badge-shuffle" title="Shuffle">
+          <svg viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.42 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+        </div>
+
+        <!-- Repeat visual badge -->
+        <div class="ctrl-badge" id="badge-repeat" title="Repeat">
+          <svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Cast SDK Receiver
+    const context = cast.framework.CastReceiverContext.getInstance();
+    const playerManager = context.getPlayerManager();
+
+    // DOM Elements
+    const bgBlurImg = document.getElementById('bg-blur-img');
+    const idleScreen = document.getElementById('idle-screen');
+    const playerCard = document.getElementById('player-card');
+    const spinner = document.getElementById('spinner');
+    const albumArt = document.getElementById('album-art');
+    const albumArtShadow = document.getElementById('album-art-shadow');
+    const songTitle = document.getElementById('song-title');
+    const artistName = document.getElementById('artist-name');
+    const progressFill = document.getElementById('progress-fill');
+    const timeCurrent = document.getElementById('time-current');
+    const timeTotal = document.getElementById('time-total');
+    const statusText = document.getElementById('status-text');
+    const brandingDot = document.getElementById('branding-dot');
+
+    // Controls state indicators
+    const indicatorIconPlay = document.getElementById('indicator-icon-play');
+    const indicatorIconPause = document.getElementById('indicator-icon-pause');
+    const playStateText = document.getElementById('play-state-text');
+    const badgeShuffle = document.getElementById('badge-shuffle');
+    const badgeRepeat = document.getElementById('badge-repeat');
+
+    // Time Formatter (mm:ss)
+    function formatTime(seconds) {
+      if (!seconds || isNaN(seconds) || seconds < 0) return '0:00';
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // Toggle view components
+    function show(el) { el.classList.remove('hidden'); }
+    function hide(el) { el.classList.add('hidden'); }
+
+    // Update UI based on playback status
+    function updateUI(mediaStatus) {
+      if (!mediaStatus) return;
+
+      const media = mediaStatus.media || {};
+      const metadata = media.metadata || {};
+      const images = metadata.images || [];
+      
+      const title = metadata.title || 'Canción Desconocida';
+      const artist = metadata.artist || metadata.albumArtist || 'Artista Desconocido';
+      const imgUrl = images.length > 0 ? images[0].url : null;
+      const duration = media.duration || 0;
+      const current = mediaStatus.currentTime || 0;
+
+      // Update basic texts
+      songTitle.textContent = title;
+      artistName.textContent = artist;
+      timeCurrent.textContent = formatTime(current);
+      timeTotal.textContent = formatTime(duration);
+
+      // Seek progress fill width percentage
+      if (duration > 0) {
+        progressFill.style.width = `${(current / duration) * 100}%`;
+      } else {
+        progressFill.style.width = '0%';
+      }
+
+      // Check player state
+      const isPlaying = mediaStatus.playerState === 'PLAYING';
+      const isPaused = mediaStatus.playerState === 'PAUSED';
+      const isBuffering = mediaStatus.playerState === 'BUFFERING';
+
+      // Update Play/Pause visually
+      if (isPlaying) {
+        hide(indicatorIconPlay);
+        show(indicatorIconPause);
+        playStateText.textContent = "Reproduciendo";
+        playerCard.classList.add('playing');
+        brandingDot.classList.remove('paused');
+        statusText.textContent = 'En Reproducción';
+      } else {
+        show(indicatorIconPlay);
+        hide(indicatorIconPause);
+        playStateText.textContent = isPaused ? "Pausado" : "Conectado";
+        playerCard.classList.remove('playing');
+        brandingDot.classList.add('paused');
+        statusText.textContent = isPaused ? 'En Pausa' : 'Conectado';
+      }
+
+      if (isBuffering) {
+        statusText.textContent = 'Cargando...';
+        playStateText.textContent = 'Cargando';
+      }
+
+      // Update Cover Images & Blur Backdrop
+      if (imgUrl && albumArt.src !== imgUrl) {
+        albumArt.classList.add('loading');
+        albumArt.onload = () => albumArt.classList.remove('loading');
+        albumArt.src = imgUrl;
+        albumArtShadow.style.backgroundImage = `url('${imgUrl}')`;
+        bgBlurImg.style.backgroundImage = `url('${imgUrl}')`;
+      }
+
+      // Handle Repeat & Shuffle states if present in Custom Data/Status
+      if (mediaStatus.mediaCustomData) {
+        const custom = mediaStatus.mediaCustomData;
+        if (custom.isShuffle !== undefined) {
+          if (custom.isShuffle) badgeShuffle.classList.add('active');
+          else badgeShuffle.classList.remove('active');
+        }
+        if (custom.repeatMode !== undefined) {
+          if (custom.repeatMode > 0) badgeRepeat.classList.add('active');
+          else badgeRepeat.classList.remove('active');
+        }
+      }
+    }
+
+    // State Switch Helpers
+    function showPlayerCard() {
+      hide(idleScreen);
+      show(playerCard);
+    }
+
+    function showIdleScreen(loading = false) {
+      show(idleScreen);
+      hide(playerCard);
+      spinner.style.display = loading ? 'block' : 'none';
+      bgBlurImg.style.backgroundImage = '';
+    }
+
+    // Cast SDK Listeners
+    playerManager.addEventListener(
+      cast.framework.events.EventType.PLAYER_LOAD_COMPLETE,
+      () => {
+        showPlayerCard();
+        const ms = playerManager.getMediaInformation();
+        if (ms) updateUI({ media: ms, currentTime: 0, playerState: 'PLAYING' });
+      }
+    );
+
+    playerManager.addEventListener(
+      cast.framework.events.EventType.MEDIA_STATUS,
+      (event) => {
+        const ms = event.mediaStatus;
+        if (!ms) return;
+        if (ms.media) {
+          showPlayerCard();
+          updateUI(ms);
+        } else if (ms.playerState === 'IDLE') {
+          showIdleScreen(false);
+        }
+      }
+    );
+
+    // Regular interval ticker for smooth time increments
+    setInterval(() => {
+      const ms = playerManager.getMediaInformation
+        ? { media: playerManager.getMediaInformation() }
+        : null;
+      const state = playerManager.getPlayerState
+        ? playerManager.getPlayerState()
+        : null;
+      const pos = playerManager.getCurrentTimeSec
+        ? playerManager.getCurrentTimeSec()
+        : 0;
+
+      if (ms && ms.media && state === 'PLAYING') {
+        const duration = ms.media.duration || 0;
+        timeCurrent.textContent = formatTime(pos);
+        if (duration > 0) {
+          progressFill.style.width = `${(pos / duration) * 100}%`;
+        }
+      }
+    }, 1000);
+
+    playerManager.addEventListener(
+      cast.framework.events.EventType.PLAYER_LOADING,
+      () => {
+        showIdleScreen(true);
+        statusText.textContent = 'Cargando...';
+        spinner.style.display = 'block';
+      }
+    );
+
+    playerManager.addEventListener(
+      cast.framework.events.EventType.PLAYER_PLAYBACK_ENDED,
+      () => showIdleScreen(false)
+    );
+
+    // Start Receiver
+    context.start();
+  </script>
+</body>
+</html>
