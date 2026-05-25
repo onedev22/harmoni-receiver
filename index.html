@@ -499,6 +499,9 @@
   </style>
 </head>
 <body>
+  <!-- Mandatory Cast Media Player element for CAF SDK to load the media -->
+  <cast-media-player style="display: none;"></cast-media-player>
+
   <!-- Dynamic blurred/aurora background -->
   <div id="ambient-container">
     <div id="bg-blur-img"></div>
@@ -732,22 +735,26 @@
 
     // Regular interval ticker for smooth time increments
     setInterval(() => {
-      const ms = playerManager.getMediaInformation
-        ? { media: playerManager.getMediaInformation() }
-        : null;
-      const state = playerManager.getPlayerState
-        ? playerManager.getPlayerState()
-        : null;
-      const pos = playerManager.getCurrentTimeSec
-        ? playerManager.getCurrentTimeSec()
-        : 0;
+      try {
+        const ms = playerManager.getMediaInformation
+          ? { media: playerManager.getMediaInformation() }
+          : null;
+        const state = playerManager.getPlayerState
+          ? playerManager.getPlayerState()
+          : null;
+        const pos = playerManager.getCurrentTimeSec
+          ? playerManager.getCurrentTimeSec()
+          : 0;
 
-      if (ms && ms.media && state === 'PLAYING') {
-        const duration = ms.media.duration || 0;
-        timeCurrent.textContent = formatTime(pos);
-        if (duration > 0) {
-          progressFill.style.width = `${(pos / duration) * 100}%`;
+        if (ms && ms.media && state === 'PLAYING') {
+          const duration = ms.media.duration || 0;
+          timeCurrent.textContent = formatTime(pos);
+          if (duration > 0) {
+            progressFill.style.width = `${(pos / duration) * 100}%`;
+          }
         }
+      } catch (e) {
+        console.warn("Ticker error: ", e);
       }
     }, 1000);
 
