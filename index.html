@@ -22,11 +22,13 @@
 
     /* Reproductor principal: siempre visible pero sin estorbar */
     cast-media-player {
-      position: relative;
-      width: 100%;
-      background: #000;
-      aspect-ratio: 16 / 9;
-      display: block;
+      position: fixed;
+      width: 1px;
+      height: 1px;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      z-index: 0;
     }
 
     /* Panel de información */
@@ -37,6 +39,8 @@
       margin: 0.5rem 1rem 1rem 1rem;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       backdrop-filter: blur(4px);
+      position: relative;
+      z-index: 1;
     }
 
     .metadata {
@@ -131,6 +135,8 @@
       max-height: 180px;
       overflow-y: auto;
       color: #5fdd9d;
+      position: relative;
+      z-index: 1;
     }
 
     .events-log h4 {
@@ -145,7 +151,7 @@
 </head>
 <body>
 
-  <!-- Elemento obligatorio del reproductor Cast -->
+  <!-- Elemento obligatorio del reproductor Cast — 1px, no display:none -->
   <cast-media-player></cast-media-player>
 
   <div class="info-panel">
@@ -194,14 +200,13 @@
       const eventLogDiv = document.getElementById('eventLogContainer');
 
       // Helper: log de eventos con timestamp
-      function addEventLog(message, isError = false) {
+      function addEventLog(message, isError) {
         const time = new Date().toLocaleTimeString();
         const prefix = isError ? '❌' : '📌';
         const colorClass = isError ? 'error-marker' : '';
-        const line = `<div class="${colorClass}">${prefix} [${time}] ${message}</div>`;
+        const line = '<div class="' + colorClass + '">' + prefix + ' [' + time + '] ' + message + '</div>';
         eventLogDiv.innerHTML += line;
         eventLogDiv.scrollTop = eventLogDiv.scrollHeight;
-        // mantener último 50 mensajes (limpieza ligera)
         if (eventLogDiv.children.length > 60) {
           while (eventLogDiv.children.length > 50) eventLogDiv.removeChild(eventLogDiv.firstChild);
         }
@@ -210,19 +215,17 @@
       // Formatear segundos a mm:ss o hh:mm:ss
       function formatTime(seconds) {
         if (!isFinite(seconds) || isNaN(seconds)) return 'En vivo';
-        if (seconds === Infinity || seconds === 0 && playerManager.getMediaInformation()?.live) return '🔴 EN VIVO';
         const hrs = Math.floor(seconds / 3600);
         const mins = Math.floor((seconds % 3600) / 60);
         const secs = Math.floor(seconds % 60);
-        if (hrs > 0) return `${hrs}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
-        return `${mins}:${secs.toString().padStart(2,'0')}`;
+        if (hrs > 0) return hrs + ':' + String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+        return mins + ':' + String(secs).padStart(2,'0');
       }
 
       // Actualizar UI con la información actual
       function updateFullUI() {
         const mediaInfo = playerManager.getMediaInformation();
         if (!mediaInfo) {
-          // sin contenido cargado
           mediaTitle.innerText = '—';
           mediaArtist.innerText = '—';
           coverImg.src = '';
@@ -234,19 +237,18 @@
         const title = metadata.title || mediaInfo.contentId || 'Sin título';
         const artist = metadata.artist || metadata.albumArtist || metadata.subtitle || 'Artista desconocido';
         const images = metadata.images || [];
-        const coverUrl = images.length > 0 && images[0].url ? images[0].url : '';
-        
+        const coverUrl = (images.length > 0 && images[0].url) ? images[0].url : '';
+
         mediaTitle.innerText = title;
         mediaArtist.innerText = artist;
         if (coverUrl) coverImg.src = coverUrl;
         else coverImg.src = '';
-        
+
         const contentUrl = mediaInfo.contentUrl || mediaInfo.contentId || '';
-        streamUrlSpan.innerText = `URL: ${contentUrl.substring(0, 100)}${contentUrl.length > 100 ? '…' : ''}`;
-        
-        // actualizar duración (soporta live)
+        streamUrlSpan.innerText = 'URL: ' + contentUrl.substring(0, 100) + (contentUrl.length > 100 ? '…' : '');
+
         const duration = mediaInfo.duration || 0;
-        if (mediaInfo.live === true || duration === Infinity) {
+        if (duration === Infinity || mediaInfo.live === true) {
           durationSpan.innerText = '🔴 En vivo';
         } else {
           durationSpan.innerText = formatTime(duration);
@@ -254,121 +256,106 @@
         updatePlaybackProgress();
       }
 
-      // progreso y tiempo actual (se llama periódicamente o por eventos)
       function updatePlaybackProgress() {
-        const state = playerManager.getPlayerState();
         const current = playerManager.getCurrentTimeSec();
         const media = playerManager.getMediaInformation();
         if (!media) return;
-        
         const duration = media.duration || 0;
         const isLive = media.live === true;
-        
-        let progressPercent = 0;
+        let pct = 0;
         if (!isLive && duration > 0 && isFinite(duration)) {
-          progressPercent = (current / duration) * 100;
+          pct = (current / duration) * 100;
         }
-        progressFill.style.width = `${Math.min(100, Math.max(0, progressPercent))}%`;
-        
+        progressFill.style.width = Math.min(100, Math.max(0, pct)) + '%';
         if (isLive) {
           currentTimeSpan.innerText = '🔴 EN DIRECTO';
-          if (durationSpan.innerText !== '🔴 En vivo') durationSpan.innerText = '🔴 En vivo';
         } else {
           currentTimeSpan.innerText = formatTime(current);
           if (duration && isFinite(duration)) durationSpan.innerText = formatTime(duration);
         }
       }
 
-      // Actualizar badge de estado reproductor
       function updateStateBadge() {
         const state = playerManager.getPlayerState();
         let text = '⏹️ Detenido';
-        if (state === 'PLAYING') text = '▶️ Reproduciendo';
-        else if (state === 'PAUSED') text = '⏸️ Pausado';
+        if (state === 'PLAYING')    text = '▶️ Reproduciendo';
+        else if (state === 'PAUSED')    text = '⏸️ Pausado';
         else if (state === 'BUFFERING') text = '⏳ Buffering...';
-        else if (state === 'IDLE') text = '💤 Inactivo';
+        else if (state === 'IDLE')      text = '💤 Inactivo';
         stateBadge.innerText = text;
       }
 
       // ----------------------------------------------
       // 3. EVENTOS Y MANEJADORES CRÍTICOS
       // ----------------------------------------------
-      
-      // Interceptor LOAD: validación ligera y log
-      playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, (loadRequest) => {
-        addEventLog(`Cargando solicitud: ${loadRequest.media?.contentId || loadRequest.media?.contentUrl || 'sin URL'}`);
-        // No bloqueamos, solo devolvemos la request para que siga
+
+      // Interceptor LOAD — log y passthrough
+      playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, function(loadRequest) {
+        const url = (loadRequest.media && (loadRequest.media.contentUrl || loadRequest.media.contentId)) || 'sin URL';
+        addEventLog('LOAD recibido: ' + url.substring(0, 80));
         return loadRequest;
       });
-      
-      // Cuando se completa la carga del contenido
-      playerManager.addEventListener(cast.framework.events.EventType.PLAYER_LOAD_COMPLETE, () => {
-        addEventLog('✅ Contenido cargado completamente');
+
+      playerManager.addEventListener(cast.framework.events.EventType.PLAYER_LOAD_COMPLETE, function() {
+        addEventLog('✅ Contenido cargado');
         updateFullUI();
         updateStateBadge();
       });
-      
-      // Cambios en la reproducción (play/pause/seek)
-      playerManager.addEventListener(cast.framework.events.EventType.MEDIA_STATUS, (event) => {
+
+      playerManager.addEventListener(cast.framework.events.EventType.MEDIA_STATUS, function(event) {
         if (event.mediaStatus) {
-          addEventLog(`Estado: ${event.mediaStatus.playerState} | time=${Math.round(event.mediaStatus.currentTime || 0)}s`);
+          addEventLog('Estado: ' + event.mediaStatus.playerState + ' | t=' + Math.round(event.mediaStatus.currentTime || 0) + 's');
           updateFullUI();
           updateStateBadge();
           updatePlaybackProgress();
         }
       });
-      
-      // Evento de tiempo actual (se dispara cada ~0.5s)
-      playerManager.addEventListener(cast.framework.events.EventType.TIME_UPDATE, () => {
+
+      playerManager.addEventListener(cast.framework.events.EventType.TIME_UPDATE, function() {
         updatePlaybackProgress();
       });
-      
-      // Estado del jugador (PLAYING, PAUSED, etc)
-      playerManager.addEventListener(cast.framework.events.EventType.PLAYER_STATE_CHANGED, (event) => {
-        addEventLog(`Player state changed → ${event.playerState}`);
+
+      playerManager.addEventListener(cast.framework.events.EventType.PLAYER_STATE_CHANGED, function(event) {
+        addEventLog('Estado cambiado → ' + event.playerState);
         updateStateBadge();
         updatePlaybackProgress();
       });
-      
-      // Manejo de errores robusto
-      playerManager.addEventListener(cast.framework.events.EventType.ERROR, (errorEvent) => {
-        let errorMsg = 'Error desconocido';
-        if (errorEvent.detailedErrorCode) errorMsg = `Código: ${errorEvent.detailedErrorCode}`;
-        else if (errorEvent.error) errorMsg = errorEvent.error.message || errorEvent.error;
-        addEventLog(`⚠️ ERROR: ${errorMsg}`, true);
+
+      playerManager.addEventListener(cast.framework.events.EventType.ERROR, function(errorEvent) {
+        let msg = 'Error desconocido';
+        if (errorEvent.detailedErrorCode) msg = 'Código: ' + errorEvent.detailedErrorCode;
+        else if (errorEvent.error) msg = errorEvent.error.message || String(errorEvent.error);
+        addEventLog('⚠️ ERROR: ' + msg, true);
         stateBadge.innerText = '❌ Error';
       });
-      
-      // Si es contenido en vivo
-      playerManager.addEventListener(cast.framework.events.EventType.LIVE_STATUS_CHANGED, () => {
-        addEventLog('🔄 Modo EN VIVO detectado');
-        updateFullUI();
-      });
-      
-      // Final de reproducción
-      playerManager.addEventListener(cast.framework.events.EventType.PLAYER_PLAYBACK_ENDED, () => {
+
+      playerManager.addEventListener(cast.framework.events.EventType.PLAYER_PLAYBACK_ENDED, function() {
         addEventLog('🏁 Reproducción finalizada');
         updateStateBadge();
         updatePlaybackProgress();
       });
-      
-      // Actualizar periódicamente la barra (por si el evento TIME_UPDATE falla)
-      setInterval(() => {
+
+      // Actualización periódica de barra de progreso
+      setInterval(function() {
         if (playerManager.getPlayerState() === 'PLAYING') updatePlaybackProgress();
       }, 500);
-      
+
       // ----------------------------------------------
       // 4. INICIAR EL RECEPTOR
       // ----------------------------------------------
       const castOptions = new cast.framework.CastReceiverOptions();
-      // Personalizamos opciones: control de reproducción, estado por defecto
-      castOptions.maxInactivity = 3600; // tiempo antes de shutdown (1h)
+      castOptions.maxInactivity = 3600;
       castOptions.disableIdleTimeout = false;
-      
+
+      // Required to declare the receiver is a valid audio/video player
+      castOptions.supportedCommands =
+        cast.framework.messages.Command.PAUSE |
+        cast.framework.messages.Command.STREAM_VOLUME |
+        cast.framework.messages.Command.STREAM_MUTE |
+        cast.framework.messages.Command.SEEK;
+
       context.start(castOptions);
-      addEventLog('🎬 Receptor Cast iniciado y esperando emisores');
-      
-      // UI inicial
+      addEventLog('🎬 context.start() llamado — receptor listo');
       updateFullUI();
       updateStateBadge();
     })();
