@@ -347,13 +347,6 @@
       castOptions.maxInactivity = 3600;
       castOptions.disableIdleTimeout = false;
 
-      // Required to declare the receiver is a valid audio/video player
-      castOptions.supportedCommands =
-        cast.framework.messages.Command.PAUSE |
-        cast.framework.messages.Command.STREAM_VOLUME |
-        cast.framework.messages.Command.STREAM_MUTE |
-        cast.framework.messages.Command.SEEK;
-
       context.start(castOptions);
       addEventLog('🎬 context.start() llamado — receptor listo');
       updateFullUI();
