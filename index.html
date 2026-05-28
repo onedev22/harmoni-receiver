@@ -179,6 +179,21 @@
   </div>
 
   <script>
+    window.onerror = function(msg, url, line) {
+      const errDiv = document.getElementById('eventLogContainer');
+      if(errDiv) {
+        errDiv.innerHTML += '<div style="color:#ff4444; background:black;">🚨 CRASH JS: ' + msg + ' (Línea ' + line + ')</div>';
+        errDiv.scrollTop = errDiv.scrollHeight;
+      }
+    };
+    window.addEventListener("unhandledrejection", function(e) {
+      const errDiv = document.getElementById('eventLogContainer');
+      if(errDiv) {
+        errDiv.innerHTML += '<div style="color:#ff4444; background:black;">🚨 PROMISE ERROR: ' + e.reason + '</div>';
+        errDiv.scrollTop = errDiv.scrollHeight;
+      }
+    });
+
     (function() {
       // ----------------------------------------------
       // 1. OBTENER INSTANCIAS DEL SDK
@@ -296,7 +311,7 @@
         return loadRequest;
       });
 
-      playerManager.addEventListener(cast.framework.events.EventType.PLAYER_LOAD_COMPLETE, function() {
+      playerManager.addEventListener(cast.framework.events.EventType.LOAD_START, function() {
         addEventLog('✅ Contenido cargado');
         updateFullUI();
         updateStateBadge();
@@ -329,7 +344,7 @@
         stateBadge.innerText = '❌ Error';
       });
 
-      playerManager.addEventListener(cast.framework.events.EventType.PLAYER_PLAYBACK_ENDED, function() {
+      playerManager.addEventListener(cast.framework.events.EventType.MEDIA_FINISHED, function() {
         addEventLog('🏁 Reproducción finalizada');
         updateStateBadge();
         updatePlaybackProgress();
