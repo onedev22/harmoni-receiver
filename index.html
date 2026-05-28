@@ -10,7 +10,392 @@
       box-sizing: border-box;
     }
 
+    body {<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Cast Receiver Pro</title>
+  <!-- SDK del receptor de Cast (v3) -->
+  <script type="text/javascript" src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js" crossorigin="anonymous"></script>
+  <!-- Cast Debug Logger -->
+  <script src="https://www.gstatic.com/cast/sdk/libs/devtools/debug_layer/caf_receiver_logger.js" crossorigin="anonymous"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
+      margin: 0;
+      background: #0a0c10;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      color: #eef;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Reproductor principal: siempre visible pero sin estorbar */
+    cast-media-player {
+      position: fixed;
+      width: 1px;
+      height: 1px;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    /* Panel de información */
+    .info-panel {
+      background: #1e1f24;
+      padding: 1rem 1.5rem;
+      border-radius: 0 0 1rem 1rem;
+      margin: 0.5rem 1rem 1rem 1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      backdrop-filter: blur(4px);
+      position: relative;
+      z-index: 1;
+    }
+
+    .metadata {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .cover {
+      width: 100px;
+      height: 100px;
+      background: #2a2e3a;
+      border-radius: 12px;
+      object-fit: cover;
+      border: 1px solid #3f4455;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .text-info {
+      flex: 1;
+    }
+
+    .title {
+      font-size: 1.6rem;
+      font-weight: 600;
+      margin: 0 0 0.25rem;
+    }
+
+    .artist {
+      font-size: 1rem;
+      color: #aaa;
+      margin: 0 0 0.5rem;
+    }
+
+    .state-badge {
+      display: inline-block;
+      background: #2c3e66;
+      padding: 0.2rem 0.8rem;
+      border-radius: 2rem;
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: #bbd9ff;
+    }
+
+    .progress-area {
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .progress-bar-bg {
+      background: #2d323e;
+      border-radius: 1rem;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      background: #1e88e5;
+      width: 0%;
+      height: 100%;
+      transition: width 0.2s;
+    }
+
+    .time-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+
+    .stream-url {
+      font-family: monospace;
+      font-size: 0.7rem;
+      background: #0b0d12;
+      padding: 0.3rem 0.6rem;
+      border-radius: 6px;
+      word-break: break-all;
+      margin-top: 0.5rem;
+      color: #7f8c9a;
+    }
+
+    .events-log {
+      background: #0f1117;
+      border-radius: 1rem;
+      margin: 1rem;
+      padding: 0.8rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      max-height: 180px;
+      overflow-y: auto;
+      color: #5fdd9d;
+      position: relative;
+      z-index: 1;
+    }
+
+    .events-log h4 {
+      margin: 0 0 0.4rem 0;
+      color: #ccc;
+    }
+
+    .error-marker {
+      color: #ff8866;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Elemento obligatorio del reproductor Cast — 1px, no display:none -->
+  <cast-media-player></cast-media-player>
+
+  <div class="info-panel">
+    <div class="metadata">
+      <img id="coverImage" class="cover" src="" alt="carátula">
+      <div class="text-info">
+        <div class="title" id="mediaTitle">—</div>
+        <div class="artist" id="mediaArtist">—</div>
+        <div><span id="playerStateBadge" class="state-badge">⚫ Detenido</span></div>
+        <div class="stream-url" id="streamUrlLabel">URL: —</div>
+      </div>
+    </div>
+    <div class="progress-area">
+      <div class="progress-bar-bg"><div id="progressFill" class="progress-fill"></div></div>
+      <div class="time-row">
+        <span id="currentTime">0:00</span>
+        <span id="durationTime">0:00</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="events-log">
+    <h4>📡 Eventos del receptor</h4>
+    <div id="eventLogContainer">🟢 Receptor iniciado. Esperando conexión...</div>
+  </div>
+
+  <script>
+    window.onerror = function(msg, url, line) {
+      const errDiv = document.getElementById('eventLogContainer');
+      if(errDiv) {
+        errDiv.innerHTML += '<div style="color:#ff4444; background:black;">🚨 CRASH JS: ' + msg + ' (Línea ' + line + ')</div>';
+        errDiv.scrollTop = errDiv.scrollHeight;
+      }
+    };
+    window.addEventListener("unhandledrejection", function(e) {
+      const errDiv = document.getElementById('eventLogContainer');
+      if(errDiv) {
+        errDiv.innerHTML += '<div style="color:#ff4444; background:black;">🚨 PROMISE ERROR: ' + e.reason + '</div>';
+        errDiv.scrollTop = errDiv.scrollHeight;
+      }
+    });
+
+    (function() {
+      // ----------------------------------------------
+      // 1. OBTENER INSTANCIAS DEL SDK Y LOGGER
+      // ----------------------------------------------
+      const context = cast.framework.CastReceiverContext.getInstance();
+      const playerManager = context.getPlayerManager();
+
+      try {
+        const castDebugLogger = cast.debug.CastDebugLogger.getInstance();
+        castDebugLogger.setEnabled(true);
+        castDebugLogger.showDebugLogs(true);
+        castDebugLogger.loggerLevelByEvents = {
+          'cast.framework.events.category.CORE': cast.framework.LoggerLevel.INFO,
+          'cast.framework.events.EventType.MEDIA_STATUS': cast.framework.LoggerLevel.DEBUG
+        };
+      } catch (e) {
+        addEventLog('Logger no disponible: ' + e);
+      }
+
+      // ----------------------------------------------
+      // 2. REFERENCIAS UI
+      // ----------------------------------------------
+      const coverImg = document.getElementById('coverImage');
+      const mediaTitle = document.getElementById('mediaTitle');
+      const mediaArtist = document.getElementById('mediaArtist');
+      const stateBadge = document.getElementById('playerStateBadge');
+      const streamUrlSpan = document.getElementById('streamUrlLabel');
+      const progressFill = document.getElementById('progressFill');
+      const currentTimeSpan = document.getElementById('currentTime');
+      const durationSpan = document.getElementById('durationTime');
+      const eventLogDiv = document.getElementById('eventLogContainer');
+
+      // Helper: log de eventos con timestamp
+      function addEventLog(message, isError) {
+        const time = new Date().toLocaleTimeString();
+        const prefix = isError ? '❌' : '📌';
+        const colorClass = isError ? 'error-marker' : '';
+        const line = '<div class="' + colorClass + '">' + prefix + ' [' + time + '] ' + message + '</div>';
+        eventLogDiv.innerHTML += line;
+        eventLogDiv.scrollTop = eventLogDiv.scrollHeight;
+        if (eventLogDiv.children.length > 60) {
+          while (eventLogDiv.children.length > 50) eventLogDiv.removeChild(eventLogDiv.firstChild);
+        }
+      }
+
+      // Formatear segundos a mm:ss o hh:mm:ss
+      function formatTime(seconds) {
+        if (!isFinite(seconds) || isNaN(seconds)) return 'En vivo';
+        const hrs = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        if (hrs > 0) return hrs + ':' + String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+        return mins + ':' + String(secs).padStart(2,'0');
+      }
+
+      // Actualizar UI con la información actual
+      function updateFullUI() {
+        const mediaInfo = playerManager.getMediaInformation();
+        if (!mediaInfo) {
+          mediaTitle.innerText = '—';
+          mediaArtist.innerText = '—';
+          coverImg.src = '';
+          streamUrlSpan.innerText = 'URL: —';
+          return;
+        }
+
+        const metadata = mediaInfo.metadata || {};
+        const title = metadata.title || mediaInfo.contentId || 'Sin título';
+        const artist = metadata.artist || metadata.albumArtist || metadata.subtitle || 'Artista desconocido';
+        const images = metadata.images || [];
+        const coverUrl = (images.length > 0 && images[0].url) ? images[0].url : '';
+
+        mediaTitle.innerText = title;
+        mediaArtist.innerText = artist;
+        if (coverUrl) coverImg.src = coverUrl;
+        else coverImg.src = '';
+
+        const contentUrl = mediaInfo.contentUrl || mediaInfo.contentId || '';
+        streamUrlSpan.innerText = 'URL: ' + contentUrl.substring(0, 100) + (contentUrl.length > 100 ? '…' : '');
+
+        const duration = mediaInfo.duration || 0;
+        if (duration === Infinity || mediaInfo.live === true) {
+          durationSpan.innerText = '🔴 En vivo';
+        } else {
+          durationSpan.innerText = formatTime(duration);
+        }
+        updatePlaybackProgress();
+      }
+
+      function updatePlaybackProgress() {
+        const current = playerManager.getCurrentTimeSec();
+        const media = playerManager.getMediaInformation();
+        if (!media) return;
+        const duration = media.duration || 0;
+        const isLive = media.live === true;
+        let pct = 0;
+        if (!isLive && duration > 0 && isFinite(duration)) {
+          pct = (current / duration) * 100;
+        }
+        progressFill.style.width = Math.min(100, Math.max(0, pct)) + '%';
+        if (isLive) {
+          currentTimeSpan.innerText = '🔴 EN DIRECTO';
+        } else {
+          currentTimeSpan.innerText = formatTime(current);
+          if (duration && isFinite(duration)) durationSpan.innerText = formatTime(duration);
+        }
+      }
+
+      function updateStateBadge() {
+        const state = playerManager.getPlayerState();
+        let text = '⏹️ Detenido';
+        if (state === 'PLAYING')    text = '▶️ Reproduciendo';
+        else if (state === 'PAUSED')    text = '⏸️ Pausado';
+        else if (state === 'BUFFERING') text = '⏳ Buffering...';
+        else if (state === 'IDLE')      text = '💤 Inactivo';
+        stateBadge.innerText = text;
+      }
+
+      // ----------------------------------------------
+      // 3. EVENTOS Y MANEJADORES CRÍTICOS
+      // ----------------------------------------------
+
+      // Interceptor LOAD — log y passthrough
+      playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, function(loadRequest) {
+        const url = (loadRequest.media && (loadRequest.media.contentUrl || loadRequest.media.contentId)) || 'sin URL';
+        addEventLog('LOAD recibido: ' + url.substring(0, 80));
+        return loadRequest;
+      });
+
+      playerManager.addEventListener(cast.framework.events.EventType.LOAD_START, function() {
+        addEventLog('✅ Contenido cargado');
+        updateFullUI();
+        updateStateBadge();
+      });
+
+      playerManager.addEventListener(cast.framework.events.EventType.MEDIA_STATUS, function(event) {
+        if (event.mediaStatus) {
+          addEventLog('Estado: ' + event.mediaStatus.playerState + ' | t=' + Math.round(event.mediaStatus.currentTime || 0) + 's');
+          updateFullUI();
+          updateStateBadge();
+          updatePlaybackProgress();
+        }
+      });
+
+      playerManager.addEventListener(cast.framework.events.EventType.TIME_UPDATE, function() {
+        updatePlaybackProgress();
+      });
+
+      playerManager.addEventListener(cast.framework.events.EventType.PLAYER_STATE_CHANGED, function(event) {
+        addEventLog('Estado cambiado → ' + event.playerState);
+        updateStateBadge();
+        updatePlaybackProgress();
+      });
+
+      playerManager.addEventListener(cast.framework.events.EventType.ERROR, function(errorEvent) {
+        let msg = 'Error desconocido';
+        if (errorEvent.detailedErrorCode) msg = 'Código: ' + errorEvent.detailedErrorCode;
+        else if (errorEvent.error) msg = errorEvent.error.message || String(errorEvent.error);
+        addEventLog('⚠️ ERROR: ' + msg, true);
+        stateBadge.innerText = '❌ Error';
+      });
+
+      playerManager.addEventListener(cast.framework.events.EventType.MEDIA_FINISHED, function() {
+        addEventLog('🏁 Reproducción finalizada');
+        updateStateBadge();
+        updatePlaybackProgress();
+      });
+
+      // Actualización periódica de barra de progreso
+      setInterval(function() {
+        if (playerManager.getPlayerState() === 'PLAYING') updatePlaybackProgress();
+      }, 500);
+
+      // ----------------------------------------------
+      // 4. INICIAR EL RECEPTOR
+      // ----------------------------------------------
+      const castOptions = new cast.framework.CastReceiverOptions();
+      castOptions.maxInactivity = 3600;
+
+      context.start(castOptions);
+      addEventLog('🎬 context.start() llamado — receptor listo');
+      updateFullUI();
+      updateStateBadge();
+    })();
+  </script>
+</body>
+</html>
+
       margin: 0;
       background: #0a0c10;
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
