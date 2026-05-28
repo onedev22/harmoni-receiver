@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <title>Cast Receiver Pro</title>
   <!-- SDK del receptor de Cast (v3) -->
-  <script type="text/javascript" src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+  <script type="text/javascript"
+    src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
   <!-- Cast Debug Logger -->
   <script src="https://www.gstatic.com/cast/sdk/libs/devtools/debug_layer/caf_receiver_logger.js"></script>
   <style>
@@ -39,7 +41,7 @@
       padding: 1rem 1.5rem;
       border-radius: 0 0 1rem 1rem;
       margin: 0.5rem 1rem 1rem 1rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       backdrop-filter: blur(4px);
       position: relative;
       z-index: 1;
@@ -59,7 +61,7 @@
       border-radius: 12px;
       object-fit: cover;
       border: 1px solid #3f4455;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
     .text-info {
@@ -151,6 +153,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <!-- Elemento obligatorio del reproductor Cast — 1px, no display:none -->
@@ -167,7 +170,9 @@
       </div>
     </div>
     <div class="progress-area">
-      <div class="progress-bar-bg"><div id="progressFill" class="progress-fill"></div></div>
+      <div class="progress-bar-bg">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
       <div class="time-row">
         <span id="currentTime">0:00</span>
         <span id="durationTime">0:00</span>
@@ -181,22 +186,22 @@
   </div>
 
   <script>
-    window.onerror = function(msg, url, line) {
+    window.onerror = function (msg, url, line) {
       const errDiv = document.getElementById('eventLogContainer');
-      if(errDiv) {
+      if (errDiv) {
         errDiv.innerHTML += '<div style="color:#ff4444; background:black;">🚨 CRASH JS: ' + msg + ' (Línea ' + line + ')</div>';
         errDiv.scrollTop = errDiv.scrollHeight;
       }
     };
-    window.addEventListener("unhandledrejection", function(e) {
+    window.addEventListener("unhandledrejection", function (e) {
       const errDiv = document.getElementById('eventLogContainer');
-      if(errDiv) {
+      if (errDiv) {
         errDiv.innerHTML += '<div style="color:#ff4444; background:black;">🚨 PROMISE ERROR: ' + e.reason + '</div>';
         errDiv.scrollTop = errDiv.scrollHeight;
       }
     });
 
-    (function() {
+    (function () {
       // ----------------------------------------------
       // 1. OBTENER INSTANCIAS DEL SDK Y LOGGER
       // ----------------------------------------------
@@ -247,8 +252,8 @@
         const hrs = Math.floor(seconds / 3600);
         const mins = Math.floor((seconds % 3600) / 60);
         const secs = Math.floor(seconds % 60);
-        if (hrs > 0) return hrs + ':' + String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
-        return mins + ':' + String(secs).padStart(2,'0');
+        if (hrs > 0) return hrs + ':' + String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+        return mins + ':' + String(secs).padStart(2, '0');
       }
 
       // Actualizar UI con la información actual
@@ -307,10 +312,10 @@
       function updateStateBadge() {
         const state = playerManager.getPlayerState();
         let text = '⏹️ Detenido';
-        if (state === 'PLAYING')    text = '▶️ Reproduciendo';
-        else if (state === 'PAUSED')    text = '⏸️ Pausado';
+        if (state === 'PLAYING') text = '▶️ Reproduciendo';
+        else if (state === 'PAUSED') text = '⏸️ Pausado';
         else if (state === 'BUFFERING') text = '⏳ Buffering...';
-        else if (state === 'IDLE')      text = '💤 Inactivo';
+        else if (state === 'IDLE') text = '💤 Inactivo';
         stateBadge.innerText = text;
       }
 
@@ -319,19 +324,19 @@
       // ----------------------------------------------
 
       // Interceptor LOAD — log y passthrough
-      playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, function(loadRequest) {
+      playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, function (loadRequest) {
         const url = (loadRequest.media && (loadRequest.media.contentUrl || loadRequest.media.contentId)) || 'sin URL';
         addEventLog('LOAD recibido: ' + url.substring(0, 80));
         return loadRequest;
       });
 
-      playerManager.addEventListener(cast.framework.events.EventType.LOAD_START, function() {
+      playerManager.addEventListener(cast.framework.events.EventType.LOAD_START, function () {
         addEventLog('✅ Contenido cargado');
         updateFullUI();
         updateStateBadge();
       });
 
-      playerManager.addEventListener(cast.framework.events.EventType.MEDIA_STATUS, function(event) {
+      playerManager.addEventListener(cast.framework.events.EventType.MEDIA_STATUS, function (event) {
         if (event.mediaStatus) {
           addEventLog('Estado: ' + event.mediaStatus.playerState + ' | t=' + Math.round(event.mediaStatus.currentTime || 0) + 's');
           updateFullUI();
@@ -340,17 +345,17 @@
         }
       });
 
-      playerManager.addEventListener(cast.framework.events.EventType.TIME_UPDATE, function() {
+      playerManager.addEventListener(cast.framework.events.EventType.TIME_UPDATE, function () {
         updatePlaybackProgress();
       });
 
-      playerManager.addEventListener(cast.framework.events.EventType.PLAYER_STATE_CHANGED, function(event) {
+      playerManager.addEventListener(cast.framework.events.EventType.PLAYER_STATE_CHANGED, function (event) {
         addEventLog('Estado cambiado → ' + event.playerState);
         updateStateBadge();
         updatePlaybackProgress();
       });
 
-      playerManager.addEventListener(cast.framework.events.EventType.ERROR, function(errorEvent) {
+      playerManager.addEventListener(cast.framework.events.EventType.ERROR, function (errorEvent) {
         let msg = 'Error desconocido';
         if (errorEvent.detailedErrorCode) msg = 'Código: ' + errorEvent.detailedErrorCode;
         else if (errorEvent.error) msg = errorEvent.error.message || String(errorEvent.error);
@@ -358,14 +363,14 @@
         stateBadge.innerText = '❌ Error';
       });
 
-      playerManager.addEventListener(cast.framework.events.EventType.MEDIA_FINISHED, function() {
+      playerManager.addEventListener(cast.framework.events.EventType.MEDIA_FINISHED, function () {
         addEventLog('🏁 Reproducción finalizada');
         updateStateBadge();
         updatePlaybackProgress();
       });
 
       // Actualización periódica de barra de progreso
-      setInterval(function() {
+      setInterval(function () {
         if (playerManager.getPlayerState() === 'PLAYING') updatePlaybackProgress();
       }, 500);
 
@@ -382,4 +387,5 @@
     })();
   </script>
 </body>
+
 </html>
