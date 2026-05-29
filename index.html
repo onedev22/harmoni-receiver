@@ -7,8 +7,6 @@
   
   <script type="text/javascript" src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
   
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
   <style>
     /* RESET DE PANTALLA COMPLETA */
     * {
@@ -36,7 +34,7 @@
       height: 120%;
       z-index: 1;
       object-fit: cover;
-      filter: blur(80px) brightness(0.5) saturate(1.7);
+      filter: blur(80px) brightness(0.45) saturate(1.7);
       transform: scale(1.05);
       transition: src 1s ease-in-out, opacity 1s ease;
       opacity: 0;
@@ -49,7 +47,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: linear-gradient(to bottom, rgba(5, 5, 7, 0.2) 0%, rgba(5, 5, 7, 0.6) 60%, rgba(5, 5, 7, 0.9) 100%);
+      background: linear-gradient(to bottom, rgba(5, 5, 7, 0.2) 0%, rgba(5, 5, 7, 0.5) 50%, rgba(5, 5, 7, 0.85) 100%);
       z-index: 2;
     }
 
@@ -74,47 +72,52 @@
       z-index: 10;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      padding: 70px 90px 60px 90px; /* Safe area generosa para TV */
+      /* Eliminamos space-between para controlar los espacios manualmente y evitar pérdidas */
+      justify-content: flex-start; 
+      padding: 5vh 6vw; /* Usamos porcentajes de pantalla para asegurar zonas seguras */
     }
 
     /* CABECERA (Solo el badge derecho) */
     .cast-header {
       display: flex;
-      justify-content: flex-end; /* Tirado por completo a la derecha */
+      justify-content: flex-end;
       width: 100%;
+      height: 10vh;
+      align-items: center;
     }
 
     .device-name {
-      color: rgba(255, 255, 255, 0.85);
-      font-size: 1.15rem;
-      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1rem;
+      font-weight: 600;
       background: rgba(255, 255, 255, 0.08);
-      padding: 10px 24px;
+      padding: 8px 20px;
       border-radius: 30px;
       backdrop-filter: blur(15px);
       -webkit-backdrop-filter: blur(15px);
       border: 1px solid rgba(255, 255, 255, 0.05);
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     /* CUERPO CENTRAL (Arte + Textos alineados) */
     .cast-body {
       display: flex;
       align-items: center;
-      gap: 70px;
-      margin-top: 20px;
+      gap: 5vw;
+      height: 60vh; /* Forzamos un alto límite para dejarle espacio real a la barra inferior */
       width: 100%;
     }
 
     .main-album-art {
-      width: 360px;
-      height: 360px;
-      border-radius: 28px;
+      /* Escalado responsivo basado en la altura de la TV */
+      width: 45vh; 
+      height: 45vh;
+      max-width: 360px;
+      max-height: 360px;
+      border-radius: 24px;
       object-fit: cover;
-      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 35px 70px rgba(0, 0, 0, 0.5);
       border: 1px solid rgba(255, 255, 255, 0.08);
       background: rgba(255, 255, 255, 0.02);
       flex-shrink: 0;
@@ -124,14 +127,14 @@
     .track-details {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
       min-width: 0;
       flex: 1;
     }
 
     .tag-now-playing {
-      color: rgba(255, 255, 255, 0.45);
-      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 0.85rem;
       font-weight: 700;
       letter-spacing: 4px;
       text-transform: uppercase;
@@ -139,7 +142,7 @@
 
     /* TÍTULO AUTOREGULABLE PARA EVITAR DESBORDES EN TV */
     .title {
-      font-size: 4.4vw; /* Se escala fluidamente según el ancho de la pantalla */
+      font-size: 4.2vw; 
       font-weight: 800;
       color: #ffffff;
       white-space: nowrap;
@@ -150,13 +153,13 @@
     }
 
     .artist {
-      font-size: 2.2rem;
+      font-size: 2rem;
       font-weight: 400;
-      color: rgba(255, 255, 255, 0.65);
+      color: rgba(255, 255, 255, 0.6);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .state-badge {
@@ -164,7 +167,7 @@
       background: rgba(255, 255, 255, 0.08);
       padding: 6px 16px;
       border-radius: 30px;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1.5px;
@@ -173,36 +176,21 @@
       width: fit-content;
     }
 
-    /* CONTROLES INFERIORES LIMPIOS Y FLUIDOS */
+    /* CONTROLES INFERIORES ASENTADOS SIMULTÁNEAMENTE */
     .bottom-player-area {
       width: 100%;
+      height: 20vh; /* Reservamos espacio garantizado dentro del Viewport */
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 25px;
-      margin-top: auto;
-    }
-
-    /* Botón único de Play / Pause centrado de forma elegante */
-    .btn-play-tv {
-      background-color: #ffffff;
-      color: #050507;
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      display: flex;
       justify-content: center;
-      align-items: center;
-      font-size: 1.45rem;
-      box-shadow: 0 12px 30px rgba(255, 255, 255, 0.15);
-      border: none;
+      margin-top: auto; /* Empuja el bloque a la base de la zona segura */
     }
 
     /* Línea de tiempo de extremo a extremo */
     .controls-area {
       display: flex;
       flex-direction: column;
-      gap: 0.9rem;
+      gap: 0.8rem;
       width: 100%;
     }
 
@@ -253,9 +241,7 @@
   <div id="ui-overlay">
     
     <header class="cast-header">
-        <div class="device-name">
-            <i class="fa-solid fa-tv"></i> Pantalla de TV
-        </div>
+        <div class="device-name">Pantalla de TV</div>
     </header>
 
     <main class="cast-body">
@@ -271,10 +257,6 @@
 
     <footer class="bottom-player-area">
       
-      <div class="btn-play-tv">
-          <i class="fa-solid fa-play" id="playIcon"></i>
-      </div>
-
       <div class="controls-area">
         <div class="progress-bar-bg">
             <div id="progressFill" class="progress-fill"></div>
@@ -305,7 +287,6 @@
       const progressFill  = document.getElementById('progressFill');
       const currentTimeEl = document.getElementById('currentTime');
       const durationEl    = document.getElementById('durationTime');
-      const playIcon      = document.getElementById('playIcon');
 
       function fmtTime(s) {
         if (!isFinite(s) || isNaN(s) || s < 0) return '0:00';
@@ -351,9 +332,8 @@
         }
       }
 
-      function updateBadgeAndButtons() {
+      function updateBadge() {
         var s = playerManager.getPlayerState();
-        
         var map = {
           'PLAYING': 'Reproduciendo',
           'PAUSED': 'Pausado',
@@ -361,15 +341,6 @@
           'IDLE': 'En espera'
         };
         badgeEl.textContent = map[s] || 'Listo';
-
-        // Gestión asíncrona del ícono del botón central
-        if (s === 'PLAYING') {
-          playIcon.className = 'fa-solid fa-pause';
-          playIcon.parentElement.style.paddingLeft = '0px';
-        } else {
-          playIcon.className = 'fa-solid fa-play';
-          playIcon.parentElement.style.paddingLeft = '4px'; // Centrado óptico de geometría
-        }
       }
 
       // Interceptor de Handshake para audio streams
@@ -389,7 +360,7 @@
       // Sincronización de Eventos de Cast SDK a UI
       playerManager.addEventListener(cast.framework.events.EventType.MEDIA_STATUS, function() {
         updateUI();
-        updateBadgeAndButtons();
+        updateBadge();
         updateProgress();
       });
 
