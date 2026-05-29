@@ -72,12 +72,11 @@
       z-index: 10;
       display: flex;
       flex-direction: column;
-      /* Eliminamos space-between para controlar los espacios manualmente y evitar pérdidas */
       justify-content: flex-start; 
       padding: 5vh 6vw; /* Usamos porcentajes de pantalla para asegurar zonas seguras */
     }
 
-    /* CABECERA (Solo el badge derecho) */
+    /* CABECERA CON EL LOGO BRANDING EN LA TV */
     .cast-header {
       display: flex;
       justify-content: flex-end;
@@ -86,18 +85,29 @@
       align-items: center;
     }
 
-    .device-name {
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 1rem;
-      font-weight: 600;
+    .brand-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
       background: rgba(255, 255, 255, 0.08);
-      padding: 8px 20px;
+      padding: 10px 24px;
       border-radius: 30px;
       backdrop-filter: blur(15px);
       -webkit-backdrop-filter: blur(15px);
       border: 1px solid rgba(255, 255, 255, 0.05);
-      text-transform: uppercase;
-      letter-spacing: 1px;
+    }
+
+    .brand-logo-img {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+    }
+
+    .brand-name {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
     }
 
     /* CUERPO CENTRAL (Arte + Textos alineados) */
@@ -110,7 +120,6 @@
     }
 
     .main-album-art {
-      /* Escalado responsivo basado en la altura de la TV */
       width: 45vh; 
       height: 45vh;
       max-width: 360px;
@@ -179,11 +188,11 @@
     /* CONTROLES INFERIORES ASENTADOS SIMULTÁNEAMENTE */
     .bottom-player-area {
       width: 100%;
-      height: 20vh; /* Reservamos espacio garantizado dentro del Viewport */
+      height: 20vh; 
       display: flex;
       flex-direction: column;
       justify-content: center;
-      margin-top: auto; /* Empuja el bloque a la base de la zona segura */
+      margin-top: auto; 
     }
 
     /* Línea de tiempo de extremo a extremo */
@@ -209,7 +218,6 @@
       position: relative;
     }
 
-    /* Puntero deslizante blanco */
     .progress-fill::after {
       content: '';
       position: absolute;
@@ -241,7 +249,10 @@
   <div id="ui-overlay">
     
     <header class="cast-header">
-        <div class="device-name">Pantalla de TV</div>
+        <div class="brand-container">
+            <img src="ic_notifi.png" class="brand-logo-img" alt="Logo">
+            <span class="brand-name">Harmoni</span>
+        </div>
     </header>
 
     <main class="cast-body">
@@ -387,5 +398,4 @@
     })();
   </script>
 </body>
-  </html>
-  
+</html>
