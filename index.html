@@ -2,10 +2,8 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Cast Receiver Pro</title>
-  <!-- SDK del receptor de Cast (v3) — OBLIGATORIO cargar PRIMERO -->
+  <title>Harmoni Cast Receiver</title>
   <script type="text/javascript" src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
-  <!-- Cast Debug Logger — ayuda a ver errores internos del SDK -->
   <script src="https://www.gstatic.com/cast/sdk/libs/devtools/debug_layer/caf_receiver_logger.js"></script>
   <style>
     * {
@@ -23,11 +21,6 @@
       color: #eef;
     }
 
-    /*
-     * CRITICO: cast-media-player DEBE ocupar todo el espacio disponible.
-     * Nunca usar display:none ni width/height de 1px.
-     * Nuestro overlay se posiciona ENCIMA del player.
-     */
     cast-media-player {
       display: block;
       width: 100%;
@@ -50,13 +43,13 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      pointer-events: none; /* No bloquear eventos de click al player */
+      pointer-events: none; 
     }
 
     /* Panel inferior de info */
     .info-panel {
       background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 80%, transparent 100%);
-      padding: 2rem 1.5rem 1.5rem;
+      padding: 2.5rem 2rem 2rem;
     }
 
     .metadata {
@@ -67,13 +60,13 @@
     }
 
     .cover {
-      width: 80px;
-      height: 80px;
+      width: 90px;
+      height: 90px;
       background: #2a2e3a;
-      border-radius: 10px;
+      border-radius: 12px;
       object-fit: cover;
       border: 1px solid rgba(255,255,255,0.1);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
       flex-shrink: 0;
     }
 
@@ -83,7 +76,7 @@
     }
 
     .title {
-      font-size: 1.4rem;
+      font-size: 1.6rem;
       font-weight: 600;
       margin-bottom: 0.2rem;
       white-space: nowrap;
@@ -92,9 +85,9 @@
     }
 
     .artist {
-      font-size: 0.95rem;
-      color: #aaa;
-      margin-bottom: 0.4rem;
+      font-size: 1.1rem;
+      color: #b3b3b3;
+      margin-bottom: 0.5rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -102,24 +95,25 @@
 
     .state-badge {
       display: inline-block;
-      background: rgba(44, 62, 102, 0.8);
-      padding: 0.15rem 0.7rem;
+      background: rgba(30, 136, 229, 0.25);
+      padding: 0.2rem 0.8rem;
       border-radius: 2rem;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       font-weight: bold;
-      color: #bbd9ff;
+      color: #64b5f6;
+      border: 1px solid rgba(30, 136, 229, 0.4);
     }
 
     .progress-area {
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.4rem;
     }
 
     .progress-bar-bg {
       background: rgba(255,255,255,0.15);
       border-radius: 1rem;
-      height: 4px;
+      height: 6px;
       overflow: hidden;
     }
 
@@ -127,38 +121,38 @@
       background: #1e88e5;
       width: 0%;
       height: 100%;
-      transition: width 0.5s linear;
+      transition: width 0.3s linear;
     }
 
     .time-row {
       display: flex;
       justify-content: space-between;
-      font-size: 0.75rem;
+      font-size: 0.85rem;
       color: rgba(255,255,255,0.6);
     }
 
-    /* Log de eventos — esquina inferior derecha pequeño */
+    /* Log de eventos */
     .events-log {
       position: fixed;
-      bottom: 0.5rem;
-      right: 0.8rem;
-      width: 360px;
-      background: rgba(0,0,0,0.75);
+      top: 1rem;
+      right: 1rem;
+      width: 320px;
+      background: rgba(0,0,0,0.85);
       border-radius: 8px;
-      padding: 0.5rem 0.8rem;
+      padding: 0.6rem;
       font-family: monospace;
-      font-size: 0.65rem;
-      max-height: 140px;
+      font-size: 0.7rem;
+      max-height: 200px;
       overflow-y: auto;
       color: #5fdd9d;
       z-index: 20;
+      border: 1px solid rgba(255,255,255,0.05);
       pointer-events: none;
     }
 
     .events-log h4 {
       margin: 0 0 0.3rem 0;
       color: #aaa;
-      font-size: 0.7rem;
     }
 
     .error-marker {
@@ -168,18 +162,12 @@
 </head>
 <body>
 
-  <!--
-    CRITICO: <cast-media-player> debe estar en el body, visible y con espacio real.
-    El SDK de Cast lo necesita para renderizar el video/audio y completar el handshake.
-    NUNCA usar display:none ni dimensiones de 1px.
-  -->
   <cast-media-player></cast-media-player>
 
-  <!-- Nuestra UI personalizada superpuesta ENCIMA del player -->
   <div id="ui-overlay">
     <div class="info-panel">
       <div class="metadata">
-        <img id="coverImage" class="cover" src="" alt="carátula">
+        <img id="coverImage" class="cover" src="" alt="carátula" style="display:none;">
         <div class="text-info">
           <div class="title" id="mediaTitle">Harmoni</div>
           <div class="artist" id="mediaArtist">Esperando conexión...</div>
@@ -197,12 +185,11 @@
   </div>
 
   <div class="events-log">
-    <h4>📡 Receptor</h4>
-    <div id="eventLogContainer">🟢 Iniciado. Esperando...</div>
+    <h4>📡 Harmoni Receiver Log</h4>
+    <div id="eventLogContainer">🟢 Sistema listo...</div>
   </div>
 
   <script>
-    // Capturar errores globales ANTES de ejecutar cualquier código del SDK
     window.onerror = function(msg, url, line) {
       const d = document.getElementById('eventLogContainer');
       if (d) {
@@ -214,25 +201,10 @@
     (function() {
       'use strict';
 
-      // -----------------------------------------------
-      // 1. INSTANCIAS DEL SDK
-      // -----------------------------------------------
       const context = cast.framework.CastReceiverContext.getInstance();
       const playerManager = context.getPlayerManager();
 
-      // Activar debug logger para ver errores internos del SDK en chrome://inspect
-      try {
-        const dbg = cast.debug.CastDebugLogger.getInstance();
-        dbg.setEnabled(true);
-        dbg.loggerLevelByEvents = {
-          'cast.framework.events.category.CORE': cast.framework.LoggerLevel.INFO,
-          'cast.framework.events.EventType.MEDIA_STATUS': cast.framework.LoggerLevel.DEBUG
-        };
-      } catch(e) { /* debug logger no disponible */ }
-
-      // -----------------------------------------------
-      // 2. REFERENCIAS UI
-      // -----------------------------------------------
+      // Referencias UI
       const coverImg      = document.getElementById('coverImage');
       const titleEl       = document.getElementById('mediaTitle');
       const artistEl      = document.getElementById('mediaArtist');
@@ -245,50 +217,48 @@
       function addLog(msg, isErr) {
         const t = new Date().toLocaleTimeString();
         const cls = isErr ? 'error-marker' : '';
-        const icon = isErr ? '❌' : '📌';
-        logDiv.innerHTML += '<div class="' + cls + '">' + icon + ' [' + t + '] ' + msg + '</div>';
+        logDiv.innerHTML += '<div class="' + cls + '">📌 [' + t + '] ' + msg + '</div>';
         logDiv.scrollTop = logDiv.scrollHeight;
-        // Limitar a 60 entradas
-        while (logDiv.children.length > 60) logDiv.removeChild(logDiv.firstChild);
       }
 
       function fmtTime(s) {
-        if (!isFinite(s) || isNaN(s)) return 'En vivo';
-        var h = Math.floor(s / 3600);
-        var m = Math.floor((s % 3600) / 60);
+        if (!isFinite(s) || isNaN(s) || s < 0) return '0:00';
+        var m = Math.floor(s / 60);
         var sec = Math.floor(s % 60);
-        if (h > 0) return h + ':' + pad(m) + ':' + pad(sec);
-        return m + ':' + pad(sec);
+        return m + ':' + String(sec).padStart(2, '0');
       }
-      function pad(n) { return String(n).padStart(2, '0'); }
 
       function updateUI() {
         var info = playerManager.getMediaInformation();
-        if (!info) {
-          titleEl.textContent = 'Harmoni';
-          artistEl.textContent = 'Esperando contenido...';
-          coverImg.src = '';
-          return;
-        }
+        if (!info) return;
+
         var meta = info.metadata || {};
-        titleEl.textContent  = meta.title || info.contentId || 'Sin título';
-        artistEl.textContent = meta.artist || meta.albumArtist || meta.subtitle || 'Artista desconocido';
+        titleEl.textContent  = meta.title || 'Canción Desconocida';
+        artistEl.textContent = meta.artist || meta.albumArtist || 'Artista Desconocido';
+        
         var imgs = meta.images || [];
-        coverImg.src = (imgs.length > 0 && imgs[0].url) ? imgs[0].url : '';
+        if (imgs.length > 0 && imgs[0].url) {
+          coverImg.src = imgs[0].url;
+          coverImg.style.display = 'block';
+        } else {
+          coverImg.style.display = 'none';
+        }
 
         var dur = info.duration || 0;
-        durationEl.textContent = (dur === Infinity) ? '🔴 En vivo' : fmtTime(dur);
-        updateProgress();
+        durationEl.textContent = fmtTime(dur);
       }
 
       function updateProgress() {
+        var cur = playerManager.getCurrentTimeSec() || 0;
         var info = playerManager.getMediaInformation();
-        if (!info) return;
-        var cur  = playerManager.getCurrentTimeSec() || 0;
-        var dur  = info.duration || 0;
-        var pct  = (dur > 0 && isFinite(dur)) ? (cur / dur * 100) : 0;
-        progressFill.style.width = Math.min(100, Math.max(0, pct)) + '%';
-        currentTimeEl.textContent = (info.live) ? '🔴 DIRECTO' : fmtTime(cur);
+        var dur = info ? (info.duration || 0) : 0;
+        
+        currentTimeEl.textContent = fmtTime(cur);
+        
+        if (dur > 0) {
+          var pct = (cur / dur) * 100;
+          progressFill.style.width = Math.min(100, Math.max(0, pct)) + '%';
+        }
       }
 
       function updateBadge() {
@@ -296,40 +266,42 @@
         var map = {
           'PLAYING': '▶️ Reproduciendo',
           'PAUSED': '⏸️ Pausado',
-          'BUFFERING': '⏳ Buffering...',
-          'IDLE': '💤 Inactivo'
+          'BUFFERING': '⏳ Cargando...',
+          'IDLE': '💤 En espera'
         };
-        badgeEl.textContent = map[s] || '⏹️ Detenido';
+        badgeEl.textContent = map[s] || '⚫ Desconectado';
       }
 
       // -----------------------------------------------
-      // 3. EVENTOS DEL PLAYER
+      // CORRECCIÓN DEL INTERCEPTOR CRÍTICO
       // -----------------------------------------------
       playerManager.setMessageInterceptor(
         cast.framework.messages.MessageType.LOAD,
-        function(req) {
-          var url = (req.media && (req.media.contentUrl || req.media.contentId)) || '?';
-          addLog('LOAD → ' + url.substring(0, 80));
-          return req;
+        function(loadRequestData) {
+          addLog('Petición LOAD recibida de Harmoni');
+          
+          if (!loadRequestData || !loadRequestData.media) {
+            addLog('Error: Petición de carga vacía', true);
+            return loadRequestData;
+          }
+
+          // Forzar que el Chromecast entienda que es flujos de audio nativos
+          if (!loadRequestData.media.contentType) {
+            loadRequestData.media.contentType = 'audio/mpeg'; 
+          }
+
+          addLog('Cargando pista: ' + (loadRequestData.media.contentId || 'Streaming'));
+          return loadRequestData; // Retornamos el objeto mutado de forma segura
         }
       );
 
+      // Eventos del Ciclo de Vida
       playerManager.addEventListener(cast.framework.events.EventType.LOAD_START, function() {
-        addLog('Cargando contenido...');
+        addLog('Iniciando decodificación de audio...');
+      });
+
+      playerManager.addEventListener(cast.framework.events.EventType.MEDIA_STATUS, function() {
         updateUI();
-        updateBadge();
-      });
-
-      playerManager.addEventListener(cast.framework.events.EventType.MEDIA_STATUS, function(e) {
-        if (e.mediaStatus) {
-          updateUI();
-          updateBadge();
-          updateProgress();
-        }
-      });
-
-      playerManager.addEventListener(cast.framework.events.EventType.PLAYER_STATE_CHANGED, function(e) {
-        addLog('Estado → ' + e.playerState);
         updateBadge();
         updateProgress();
       });
@@ -339,31 +311,27 @@
       });
 
       playerManager.addEventListener(cast.framework.events.EventType.ERROR, function(e) {
-        var msg = e.detailedErrorCode ? 'Código: ' + e.detailedErrorCode
-                : (e.error ? (e.error.message || String(e.error)) : 'Error desconocido');
-        addLog('ERROR: ' + msg, true);
-        badgeEl.textContent = '❌ Error';
+        addLog('Error del Player: ' + (e.detailedErrorCode || 'Desconocido'), true);
+        badgeEl.textContent = '❌ Error de códec';
       });
 
-      playerManager.addEventListener(cast.framework.events.EventType.MEDIA_FINISHED, function() {
-        addLog('Reproducción finalizada');
-        updateBadge();
-        updateProgress();
-      });
-
-      // Actualizar barra cada 500ms cuando está reproduciendo
+      // Bucle de renderizado para asegurar suavidad en la barra de progreso
       setInterval(function() {
-        if (playerManager.getPlayerState() === 'PLAYING') updateProgress();
-      }, 500);
+        if (playerManager.getPlayerState() === 'PLAYING') {
+          updateProgress();
+        }
+      }, 250);
 
       // -----------------------------------------------
-      // 4. INICIAR EL RECEPTOR
+      // CONFIGURACIÓN DE ARRANQUE PARA AUDIO (HARMONI)
       // -----------------------------------------------
-      var opts = new cast.framework.CastReceiverOptions();
-      opts.maxInactivity = 3600;
+      const options = new cast.framework.CastReceiverOptions();
+      
+      // Desactivar el apagado automático rápido para dar tiempo en pausa
+      options.maxInactivity = 3600; 
 
-      context.start(opts);
-      addLog('✅ context.start() — receptor listo');
+      context.start(options);
+      addLog('🚀 Receptor Harmoni inicializado con éxito');
 
     })();
   </script>
