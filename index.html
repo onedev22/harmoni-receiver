@@ -26,7 +26,7 @@
     }
 
     /* ==========================================================================
-       PANTALLA DE INICIO / SPLASH SCREEN (Logo y Nombre en la misma línea)
+       PANTALLA DE INICIO / SPLASH SCREEN (Fijo y Sólido sin animaciones raras)
        ========================================================================== */
     #splash-screen {
       position: fixed;
@@ -34,21 +34,18 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: #050507; 
-      z-index: 100; 
+      background: #050507; /* Negro puro para tapar todo el fondo */
+      z-index: 100; /* Prioridad máxima absoluta */
       display: flex;
-      flex-direction: row; /* Elementos alineados en horizontal */
+      flex-direction: row; 
       justify-content: center;
       align-items: center;
-      gap: 2vw; /* Espacio proporcional entre el logo y el texto */
-      transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+      gap: 2vw; 
+      transition: opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1);
       opacity: 1;
-      /* Animación sutil de respiración en todo el bloque de marca */
-      animation: pulse 2.5s infinite ease-in-out; 
     }
 
     .splash-logo {
-      /* Usamos la misma unidad relativa de altura/ancho para mantener perfecta simetría */
       width: 6vw; 
       height: 6vw;
       max-width: 90px;
@@ -57,7 +54,6 @@
     }
 
     .splash-title {
-      /* Ajustamos el tamaño de fuente al mismo valor del contenedor del logo */
       font-size: 6vw; 
       max-font-size: 90px;
       font-weight: 800;
@@ -66,12 +62,7 @@
       line-height: 1;
     }
 
-    @keyframes pulse {
-      0% { transform: scale(1); opacity: 0.85; }
-      50% { transform: scale(1.02); opacity: 1; }
-      100% { transform: scale(1); opacity: 0.85; }
-    }
-
+    /* Clase de salida */
     #splash-screen.fade-out {
       opacity: 0;
       pointer-events: none;
@@ -79,7 +70,7 @@
 
 
     /* ==========================================================================
-       FONDO LÍQUIDO E INTERFAZ PRINCIPAL
+       FONDO LÍQUIDO E INTERFAZ PRINCIPAL (Arrancan totalmente ocultos)
        ========================================================================== */
     #bg-liquid {
       position: fixed;
@@ -103,6 +94,8 @@
       height: 100%;
       background: linear-gradient(to bottom, rgba(5, 5, 7, 0.2) 0%, rgba(5, 5, 7, 0.5) 50%, rgba(5, 5, 7, 0.85) 100%);
       z-index: 2;
+      opacity: 0;
+      transition: opacity 0.8s ease;
     }
 
     cast-media-player {
@@ -126,9 +119,16 @@
       flex-direction: column;
       justify-content: flex-start; 
       padding: 5vh 6vw; 
+      opacity: 0; /* Oculto completamente al inicio */
+      transition: opacity 0.8s ease;
     }
 
-    /* CABECERA (Esquina superior derecha) */
+    /* Efecto de revelado suave al conectar */
+    .ready-active {
+      opacity: 1 !important;
+    }
+
+    /* CABECERA */
     .cast-header {
       display: flex;
       justify-content: flex-end;
@@ -297,7 +297,7 @@
   </div>
 
   <img id="bg-liquid" src="" alt="">
-  <div class="ambient-overlay"></div>
+  <div id="ambientOverlay" class="ambient-overlay"></div>
 
   <cast-media-player></cast-media-player>
 
@@ -343,15 +343,17 @@
       const playerManager = context.getPlayerManager();
 
       // Enlaces del DOM
-      const splashScreen  = document.getElementById('splash-screen');
-      const bgLiquid      = document.getElementById('bg-liquid');
-      const coverImg      = document.getElementById('coverImage');
-      const titleEl       = document.getElementById('mediaTitle');
-      const artistEl      = document.getElementById('mediaArtist');
-      const badgeEl       = document.getElementById('playerStateBadge');
-      const progressFill  = document.getElementById('progressFill');
-      const currentTimeEl = document.getElementById('currentTime');
-      const durationEl    = document.getElementById('durationTime');
+      const splashScreen    = document.getElementById('splash-screen');
+      const uiOverlay       = document.getElementById('ui-overlay');
+      const ambientOverlay  = document.getElementById('ambientOverlay');
+      const bgLiquid        = document.getElementById('bg-liquid');
+      const coverImg        = document.getElementById('coverImage');
+      const titleEl         = document.getElementById('mediaTitle');
+      const artistEl        = document.getElementById('mediaArtist');
+      const badgeEl         = document.getElementById('playerStateBadge');
+      const progressFill    = document.getElementById('progressFill');
+      const currentTimeEl   = document.getElementById('currentTime');
+      const durationEl      = document.getElementById('durationTime');
 
       function fmtTime(s) {
         if (!isFinite(s) || isNaN(s) || s < 0) return '0:00';
@@ -364,12 +366,17 @@
         var info = playerManager.getMediaInformation();
         if (!info) return;
 
-        // Desvanecer Splash Screen cuando entren los datos reales
+        // ACTIVACIÓN DE TRANSICIÓN LIMPIA: Oculta Splash y de inmediato revela el reproductor
         if (splashScreen && !splashScreen.classList.contains('fade-out')) {
           splashScreen.classList.add('fade-out');
+          
+          // Revelamos de golpe pero suave la interfaz real solo cuando el splash se quita
+          uiOverlay.classList.add('ready-active');
+          ambientOverlay.classList.add('ready-active');
+
           setTimeout(function() {
             splashScreen.remove();
-          }, 800);
+          }, 600);
         }
 
         var meta = info.metadata || {};
