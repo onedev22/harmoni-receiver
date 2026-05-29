@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Harmoni Cast Receiver Pro</title>
+  <title>Harmoni Cast Receiver Immersive</title>
   
   <script type="text/javascript" src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
-  <script src="https://www.gstatic.com/cast/sdk/libs/devtools/debug_layer/caf_receiver_logger.js"></script>
   
   <style>
     * {
@@ -19,14 +18,16 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #05070a;
+      background: #07090e;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
       color: #ffffff;
     }
 
-    /* FONDO ESPEJADO: Toma la carátula y la estira con blur masivo */
-    #bg-blur {
+    /* * ENFOQUE PANTALLA COMPLETA INMERSIVA (Estilo Apple TV)
+     * La carátula se expande al 100% con un blur ultra suave para generar el fondo líquido
+     */
+    #bg-liquid {
       position: fixed;
       top: -10%;
       left: -10%;
@@ -34,12 +35,13 @@
       height: 120%;
       z-index: -1;
       object-fit: cover;
-      filter: blur(70px) brightness(0.35) saturate(1.4);
-      transition: src 0.8s ease-in-out, opacity 0.5s ease;
+      filter: blur(55px) brightness(0.45) saturate(1.6);
+      transform: scale(1.1);
+      transition: src 1s ease-in-out, opacity 0.8s ease;
       opacity: 0;
     }
 
-    /* Player nativo oculto visualmente pero activo en el núcleo */
+    /* Player nativo de Cast oculto en el núcleo */
     cast-media-player {
       position: fixed;
       top: 0;
@@ -50,7 +52,7 @@
       opacity: 0;
     }
 
-    /* Contenedor principal centrado para TV */
+    /* Contenedor principal: Todo el peso visual se tira hacia abajo */
     #ui-overlay {
       position: fixed;
       top: 0;
@@ -60,40 +62,40 @@
       z-index: 10;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-end; /* Alinea los controles a la parte inferior */
       align-items: center;
-      padding: 3rem;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.5) 100%);
+      padding-bottom: 5rem; /* Espaciado cómodo para el marco del TV */
+      background: linear-gradient(to top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 50%, transparent 100%);
     }
 
-    /* TARJETA DE CRISTAL (Glassmorphism) */
-    .glass-card {
+    /* CÁPSULA DE CRISTAL FLOTANTE (Glassmorphism Estilo Apple) */
+    .glass-panel {
       background: rgba(255, 255, 255, 0.06);
-      backdrop-filter: blur(35px);
-      -webkit-backdrop-filter: blur(35px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 24px;
-      padding: 3.5rem;
-      width: 85%;
-      max-width: 920px;
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 30px;
+      padding: 2.2rem 3rem;
+      width: 90%;
+      max-width: 1100px;
       display: flex;
-      gap: 3.5rem;
+      gap: 2.5rem;
       align-items: center;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75),
-                  inset 0 1px 0 rgba(255,255,255,0.15);
+      box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.8),
+                  inset 0 1px 0 rgba(255,255,255,0.2); /* Resplandor interno de cristal */
     }
 
-    /* Carátula flotante */
-    .cover {
-      width: 260px;
-      height: 260px;
+    /* Mini-miniatura de carátula dentro del cristal */
+    .mini-cover {
+      width: 90px;
+      height: 90px;
       background: rgba(255,255,255,0.03);
-      border-radius: 18px;
+      border-radius: 14px;
       object-fit: cover;
-      box-shadow: 0 22px 45px rgba(0,0,0,0.65);
-      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.15);
       flex-shrink: 0;
-      display: none; /* Se activa dinámicamente por JS */
+      display: none;
     }
 
     .text-info {
@@ -104,53 +106,67 @@
       justify-content: center;
     }
 
+    /* Contenedor para alinear Título + Artista y el Badge en una sola fila limpia */
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .meta-strings {
+      flex: 1;
+      min-width: 0;
+    }
+
     .title {
-      font-size: 2.5rem;
+      font-size: 2.2rem;
       font-weight: 700;
       color: #ffffff;
-      margin-bottom: 0.3rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       letter-spacing: -0.5px;
+      line-height: 1.2;
     }
 
     .artist {
-      font-size: 1.4rem;
+      font-size: 1.3rem;
       font-weight: 400;
       color: rgba(255, 255, 255, 0.65);
-      margin-bottom: 1.8rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      margin-top: 0.1rem;
     }
 
-    /* Badge de estado minimalista */
+    /* Badge de estado hiper-minimalista */
     .state-badge {
       display: inline-block;
-      background: rgba(255, 255, 255, 0.08);
-      padding: 0.35rem 1.1rem;
-      border-radius: 20px;
-      font-size: 0.8rem;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 0.3rem 0.9rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 1px;
       color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      margin-bottom: 1.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      flex-shrink: 0;
     }
 
-    /* Controles y progreso */
+    /* Controles de línea de tiempo blanca sutil */
     .controls-area {
       display: flex;
       flex-direction: column;
-      gap: 0.9rem;
+      gap: 0.6rem;
       width: 100%;
     }
 
     .progress-bar-bg {
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
       height: 6px;
       width: 100%;
       overflow: hidden;
@@ -160,55 +176,39 @@
       background: #ffffff;
       width: 0%;
       height: 100%;
-      border-radius: 4px;
+      border-radius: 10px;
       transition: width 0.3s linear;
     }
 
     .time-row {
       display: flex;
       justify-content: space-between;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 500;
-      color: rgba(255, 255, 255, 0.45);
-    }
-
-    /* Log de eventos sutil para Debug */
-    .events-log {
-      position: fixed;
-      top: 1.5rem;
-      right: 1.5rem;
-      width: 280px;
-      background: rgba(0,0,0,0.4);
-      backdrop-filter: blur(10px);
-      border-radius: 8px;
-      padding: 0.6rem;
-      font-family: monospace;
-      font-size: 0.65rem;
-      max-height: 120px;
-      overflow-y: auto;
-      color: #5fdd9d;
-      z-index: 100;
-      opacity: 0.25;
-      pointer-events: none;
-      border: 1px solid rgba(255,255,255,0.05);
+      color: rgba(255, 255, 255, 0.4);
     }
   </style>
 </head>
 <body>
 
-  <img id="bg-blur" src="" alt="">
+  <img id="bg-liquid" src="" alt="">
 
   <cast-media-player></cast-media-player>
 
   <div id="ui-overlay">
-    <div class="glass-card">
+    <div class="glass-panel">
       
-      <img id="coverImage" class="cover" src="" alt="Carátula">
+      <img id="coverImage" class="mini-cover" src="" alt="Carátula">
       
       <div class="text-info">
-        <div><span id="playerStateBadge" class="state-badge">En espera</span></div>
-        <div class="title" id="mediaTitle">Harmoni</div>
-        <div class="artist" id="mediaArtist">Conecta tu dispositivo...</div>
+        
+        <div class="header-row">
+          <div class="meta-strings">
+            <div class="title" id="mediaTitle">Harmoni</div>
+            <div class="artist" id="mediaArtist">Conecta tu dispositivo...</div>
+          </div>
+          <div><span id="playerStateBadge" class="state-badge">En espera</span></div>
+        </div>
         
         <div class="controls-area">
           <div class="progress-bar-bg"><div id="progressFill" class="progress-fill"></div></div>
@@ -217,33 +217,21 @@
             <span id="durationTime">0:00</span>
           </div>
         </div>
+
       </div>
 
     </div>
   </div>
 
-  <div class="events-log">
-    <div id="eventLogContainer">🟢 Receptor Harmoni Listo</div>
-  </div>
-
   <script>
-    // Captura global de errores de JS directo a la mini consola del TV
-    window.onerror = function(msg, url, line) {
-      const d = document.getElementById('eventLogContainer');
-      if (d) {
-        d.innerHTML += '<div style="color:#ff8866;">🚨 JS: ' + msg + ' (L' + line + ')</div>';
-        d.scrollTop = d.scrollHeight;
-      }
-    };
-
     (function() {
       'use strict';
 
       const context = cast.framework.CastReceiverContext.getInstance();
       const playerManager = context.getPlayerManager();
 
-      // Referencias de Elementos de la UI
-      const bgBlur        = document.getElementById('bg-blur');
+      // Referencias UI
+      const bgLiquid      = document.getElementById('bg-liquid');
       const coverImg      = document.getElementById('coverImage');
       const titleEl       = document.getElementById('mediaTitle');
       const artistEl      = document.getElementById('mediaArtist');
@@ -251,14 +239,10 @@
       const progressFill  = document.getElementById('progressFill');
       const currentTimeEl = document.getElementById('currentTime');
       const durationEl    = document.getElementById('durationTime');
-      const logDiv        = document.getElementById('eventLogContainer');
 
-      function addLog(msg, isErr) {
-        const t = new Date().toLocaleTimeString();
-        const style = isErr ? 'color:#ff8866;' : '';
-        logDiv.innerHTML += '<div style="' + style + '">📌 [' + t + '] ' + msg + '</div>';
-        logDiv.scrollTop = logDiv.scrollHeight;
-      }
+      /* * NOTA DE PRODUCCIÓN: Se comentaron y removieron los sistemas de logs visuales
+       * para optimizar el rendimiento en pantallas de TV comerciales.
+       */
 
       function fmtTime(s) {
         if (!isFinite(s) || isNaN(s) || s < 0) return '0:00';
@@ -280,11 +264,12 @@
           coverImg.src = imgs[0].url;
           coverImg.style.display = 'block';
           
-          bgBlur.src = imgs[0].url;
-          bgBlur.style.opacity = '1';
+          // Inyecta la carátula en pantalla completa con el gradiente líquido de CSS
+          bgLiquid.src = imgs[0].url;
+          bgLiquid.style.opacity = '1';
         } else {
           coverImg.style.display = 'none';
-          bgBlur.style.opacity = '0';
+          bgLiquid.style.opacity = '0';
         }
 
         var dur = info.duration || 0;
@@ -307,40 +292,34 @@
       function updateBadge() {
         var s = playerManager.getPlayerState();
         var map = {
-          'PLAYING': '▶️ Reproduciendo',
-          'PAUSED': '⏸️ Pausado',
-          'BUFFERING': '⏳ Cargando...',
-          'IDLE': '💤 En espera'
+          'PLAYING': 'Reproduciendo',
+          'PAUSED': 'Pausado',
+          'BUFFERING': 'Cargando',
+          'IDLE': 'En espera'
         };
-        badgeEl.textContent = map[s] || '⚫ Listo';
+        badgeEl.textContent = map[s] || 'Listo';
       }
 
-      // INTERCEPTOR MÁGICO: Evita fallos de Handshake con streams de audio de Android
+      // Interceptor de Handshake para streams de audio
       playerManager.setMessageInterceptor(
         cast.framework.messages.MessageType.LOAD,
         function(loadRequestData) {
-          addLog('Petición LOAD recibida desde Harmoni app');
+          // Log interno comentado para producción
+          // console.log('LOAD recibido');
           
           if (!loadRequestData || !loadRequestData.media) {
-            addLog('Error: Petición de carga nula', true);
             return loadRequestData;
           }
 
-          // Forzar tipo de contenido genérico si Android no lo define explícitamente
           if (!loadRequestData.media.contentType) {
             loadRequestData.media.contentType = 'audio/mpeg'; 
           }
 
-          addLog('Carga validada: ' + (loadRequestData.media.contentId || 'Streaming Audio'));
           return loadRequestData;
         }
       );
 
-      // Suscriptores de Eventos del Player
-      playerManager.addEventListener(cast.framework.events.EventType.LOAD_START, function() {
-        addLog('Procesando pipeline de audio...');
-      });
-
+      // Eventos del reproductor
       playerManager.addEventListener(cast.framework.events.EventType.MEDIA_STATUS, function() {
         updateUI();
         updateBadge();
@@ -352,26 +331,24 @@
       });
 
       playerManager.addEventListener(cast.framework.events.EventType.ERROR, function(e) {
-        addLog('Error interno del player SDK: ' + (e.detailedErrorCode || 'Desconocido'), true);
-        badgeEl.textContent = '❌ Error de códec';
+        // Error manejado de manera silenciosa en la interfaz
+        badgeEl.textContent = 'Error';
       });
 
-      // Render loop continuo para garantizar suavidad en la barra (250ms)
+      // Loop asíncrono para refrescar la barra de tiempo (250ms)
       setInterval(function() {
         if (playerManager.getPlayerState() === 'PLAYING') {
           updateProgress();
         }
       }, 250);
 
-      // Configuración e inicio de contexto
+      // Parámetros de inicialización de Google Cast
       const options = new cast.framework.CastReceiverOptions();
-      options.maxInactivity = 3600; // 1 hora de margen antes de desconectar por pausa
+      options.maxInactivity = 3600; 
 
       context.start(options);
-      addLog('🚀 Servidor de Cast Harmoni Corriendo');
 
     })();
   </script>
 </body>
-  </html>
-  
+</html>
