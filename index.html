@@ -27,7 +27,7 @@
       color: #ffffff;
     }
 
-    /* 1. EL EFECTO LÍQUIDO AMBIENTAL DE FONDO (Extraído por Cast JS) */
+    /* FONDO LÍQUIDO DINÁMICO CON BLUR PREMIUM */
     #bg-liquid {
       position: fixed;
       top: -10%;
@@ -36,25 +36,24 @@
       height: 120%;
       z-index: 1;
       object-fit: cover;
-      /* Configuración ideal de desenfoque y saturación inteligente */
-      filter: blur(90px) brightness(0.5) saturate(1.8);
+      filter: blur(80px) brightness(0.5) saturate(1.7);
       transform: scale(1.05);
       transition: src 1s ease-in-out, opacity 1s ease;
       opacity: 0;
     }
 
-    /* Capa de contraste degradada para evitar que encandile en pantallas OLED/LED */
+    /* Capa de contraste degradada para legibilidad */
     .ambient-overlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: linear-gradient(to bottom, rgba(5, 5, 7, 0.3) 0%, rgba(5, 5, 7, 0.75) 60%, rgba(5, 5, 7, 0.95) 100%);
+      background: linear-gradient(to bottom, rgba(5, 5, 7, 0.2) 0%, rgba(5, 5, 7, 0.6) 60%, rgba(5, 5, 7, 0.9) 100%);
       z-index: 2;
     }
 
-    /* Player nativo oculto de Google Cast */
+    /* Player nativo oculto de Cast */
     cast-media-player {
       position: fixed;
       top: 0;
@@ -65,7 +64,7 @@
       opacity: 0;
     }
 
-    /* 2. CONTENEDOR PRINCIPAL DE COMPONENTES VISUALES */
+    /* CONTENEDOR PRINCIPAL DE LA UI */
     #ui-overlay {
       position: fixed;
       top: 0;
@@ -76,57 +75,47 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 60px 80px; /* Safe Area para televisión */
+      padding: 70px 90px 60px 90px; /* Safe area generosa para TV */
     }
 
-    /* CABECERA MINIMALISTA (Estilo Cast / Conexión) */
+    /* CABECERA (Solo el badge derecho) */
     .cast-header {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .cast-status {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      color: rgba(255, 255, 255, 0.45);
-      font-size: 1.1rem;
-      font-weight: 500;
-    }
-
-    .cast-status i {
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 1.3rem;
+      justify-content: flex-end; /* Tirado por completo a la derecha */
+      width: 100%;
     }
 
     .device-name {
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 1.1rem;
-      background: rgba(255, 255, 255, 0.05);
-      padding: 8px 20px;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 1.15rem;
+      font-weight: 500;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 10px 24px;
       border-radius: 30px;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    /* ENFOQUE DEL CONTENIDO: CARÁTULA GIGANTE + METADATOS */
+    /* CUERPO CENTRAL (Arte + Textos alineados) */
     .cast-body {
       display: flex;
       align-items: center;
-      gap: 60px;
-      margin-top: -20px;
+      gap: 70px;
+      margin-top: 20px;
       width: 100%;
     }
 
     .main-album-art {
-      width: 320px;
-      height: 320px;
-      border-radius: 20px;
+      width: 360px;
+      height: 360px;
+      border-radius: 28px;
       object-fit: cover;
-      box-shadow: 0 35px 70px rgba(0, 0, 0, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       background: rgba(255, 255, 255, 0.02);
       flex-shrink: 0;
       transition: opacity 0.5s ease;
@@ -135,151 +124,104 @@
     .track-details {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       min-width: 0;
       flex: 1;
     }
 
     .tag-now-playing {
-      color: rgba(255, 255, 255, 0.4);
-      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 0.9rem;
       font-weight: 700;
-      letter-spacing: 3px;
+      letter-spacing: 4px;
       text-transform: uppercase;
     }
 
+    /* TÍTULO AUTOREGULABLE PARA EVITAR DESBORDES EN TV */
     .title {
-      font-size: 4.6rem; /* Enorme para visualización a larga distancia */
+      font-size: 4.4vw; /* Se escala fluidamente según el ancho de la pantalla */
       font-weight: 800;
       color: #ffffff;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       letter-spacing: -1.5px;
-      line-height: 1.1;
+      line-height: 1.15;
     }
 
     .artist {
       font-size: 2.2rem;
       font-weight: 400;
-      color: rgba(255, 255, 255, 0.6);
+      color: rgba(255, 255, 255, 0.65);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      margin-bottom: 12px;
     }
 
-    /* Badge de estado sincronizado con el reproductor */
     .state-badge {
       display: inline-block;
       background: rgba(255, 255, 255, 0.08);
-      padding: 6px 14px;
-      border-radius: 12px;
-      font-size: 0.8rem;
+      padding: 6px 16px;
+      border-radius: 30px;
+      font-size: 0.85rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
       color: #ffffff;
       border: 1px solid rgba(255, 255, 255, 0.05);
       width: fit-content;
-      margin-top: 4px;
     }
 
-    /* 3. CAPSULA DE CONTROLES ADAPTADA (Integración Cromática Absoluta) */
-    .glass-panel {
-      background: rgba(255, 255, 255, 0.02); 
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 28px;
-      padding: 30px 45px;
-      backdrop-filter: blur(35px) saturate(130%);
-      -webkit-backdrop-filter: blur(35px) saturate(130%);
+    /* CONTROLES INFERIORES LIMPIOS Y FLUIDOS */
+    .bottom-player-area {
+      width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      width: 100%;
-      max-width: 1100px;
-      margin: 0 auto;
-      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-    }
-
-    /* Fila superior de la cápsula */
-    .controls-row {
-      display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 25px;
+      margin-top: auto;
     }
 
-    .ctrl-group {
-      display: flex;
-      align-items: center;
-      gap: 28px;
-    }
-
-    .btn-action {
-      background: none;
-      border: none;
-      color: rgba(255, 255, 255, 0.45);
-      font-size: 1.25rem;
-    }
-
-    /* El ícono dinámico central de reproducción */
+    /* Botón único de Play / Pause centrado de forma elegante */
     .btn-play-tv {
       background-color: #ffffff;
       color: #050507;
-      width: 56px;
-      height: 56px;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 1.3rem;
-      box-shadow: 0 10px 25px rgba(255, 255, 255, 0.15);
+      font-size: 1.45rem;
+      box-shadow: 0 12px 30px rgba(255, 255, 255, 0.15);
+      border: none;
     }
 
-    /* Control de volumen sutil */
-    .volume-container {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .volume-rail {
-      width: 110px;
-      height: 5px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 3px;
-    }
-
-    .volume-track {
-      width: 75%; /* Volumen por defecto simulado visualmente */
-      height: 100%;
-      background: rgba(255, 255, 255, 0.7);
-      border-radius: 3px;
-    }
-
-    /* Fila inferior: Línea de tiempo refinada */
+    /* Línea de tiempo de extremo a extremo */
     .controls-area {
       display: flex;
       flex-direction: column;
-      gap: 0.8rem;
+      gap: 0.9rem;
       width: 100%;
     }
 
     .progress-bar-bg {
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.12);
       border-radius: 10px;
       height: 6px;
       width: 100%;
     }
 
     .progress-fill {
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.9);
       width: 0%;
       height: 100%;
       border-radius: 10px;
       position: relative;
     }
 
-    /* El puntero deslizante de reproducción */
+    /* Puntero deslizante blanco */
     .progress-fill::after {
       content: '';
       position: absolute;
@@ -294,7 +236,7 @@
     .time-row {
       display: flex;
       justify-content: space-between;
-      font-size: 0.95rem;
+      font-size: 1rem;
       font-weight: 500;
       color: rgba(255, 255, 255, 0.35);
       font-variant-numeric: tabular-nums;
@@ -311,10 +253,6 @@
   <div id="ui-overlay">
     
     <header class="cast-header">
-        <div class="cast-status">
-            <i class="fa-solid fa-chromecast"></i>
-            <span>Harmoni Cast Receiver</span>
-        </div>
         <div class="device-name">
             <i class="fa-solid fa-tv"></i> Pantalla de TV
         </div>
@@ -326,36 +264,15 @@
         <div class="track-details">
             <span class="tag-now-playing">Sonando Ahora</span>
             <div class="title" id="mediaTitle">Harmoni</div>
-            <div class="artist" id="mediaArtist">Conecta tu dispositivo desde la app...</div>
-            <span id="playerStateBadge" class="state-badge">En espera</span>
+            <div class="artist" id="mediaArtist">Conecta tu dispositivo...</div>
+            <div><span id="playerStateBadge" class="state-badge">En espera</span></div>
         </div>
     </main>
 
-    <div class="glass-panel">
+    <footer class="bottom-player-area">
       
-      <div class="controls-row">
-          <div class="ctrl-group">
-              <button class="btn-action"><i class="fa-regular fa-heart"></i></button>
-              <button class="btn-action"><i class="fa-solid fa-folder-plus"></i></button>
-              <button class="btn-action"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
-          </div>
-
-          <div class="ctrl-group">
-              <button class="btn-action"><i class="fa-solid fa-shuffle"></i></button>
-              <button class="btn-action"><i class="fa-solid fa-backward-step"></i></button>
-              <div class="btn-play-tv" id="playIconContainer">
-                  <i class="fa-solid fa-play" id="playIcon"></i>
-              </div>
-              <button class="btn-action"><i class="fa-solid fa-forward-step"></i></button>
-              <button class="btn-action"><i class="fa-solid fa-repeat"></i></button>
-          </div>
-
-          <div class="ctrl-group volume-container">
-              <button class="btn-action"><i class="fa-solid fa-volume-high"></i></button>
-              <div class="volume-rail">
-                  <div class="volume-track"></div>
-              </div>
-          </div>
+      <div class="btn-play-tv">
+          <i class="fa-solid fa-play" id="playIcon"></i>
       </div>
 
       <div class="controls-area">
@@ -368,7 +285,7 @@
         </div>
       </div>
 
-    </div>
+    </footer>
 
   </div>
 
@@ -379,7 +296,7 @@
       const context = cast.framework.CastReceiverContext.getInstance();
       const playerManager = context.getPlayerManager();
 
-      // Referencias de elementos de Interfaz
+      // Enlaces del DOM
       const bgLiquid      = document.getElementById('bg-liquid');
       const coverImg      = document.getElementById('coverImage');
       const titleEl       = document.getElementById('mediaTitle');
@@ -407,11 +324,9 @@
         
         var imgs = meta.images || [];
         if (imgs.length > 0 && imgs[0].url) {
-          // Asigna la carátula a la imagen principal
           coverImg.src = imgs[0].url;
           coverImg.style.opacity = '1';
           
-          // Asigna e inyecta la misma carátula al fondo líquido desenfocado
           bgLiquid.src = imgs[0].url;
           bgLiquid.style.opacity = '1';
         } else {
@@ -439,7 +354,6 @@
       function updateBadgeAndButtons() {
         var s = playerManager.getPlayerState();
         
-        // Sincroniza el badge de estado
         var map = {
           'PLAYING': 'Reproduciendo',
           'PAUSED': 'Pausado',
@@ -448,33 +362,31 @@
         };
         badgeEl.textContent = map[s] || 'Listo';
 
-        // Cambia dinámicamente el ícono del botón central blanco (Play / Pause)
+        // Gestión asíncrona del ícono del botón central
         if (s === 'PLAYING') {
           playIcon.className = 'fa-solid fa-pause';
-          playIcon.parentElement.style.paddingLeft = '0px'; // Centrado exacto del pause
+          playIcon.parentElement.style.paddingLeft = '0px';
         } else {
           playIcon.className = 'fa-solid fa-play';
-          playIcon.parentElement.style.paddingLeft = '4px';  // Compensación óptica del play
+          playIcon.parentElement.style.paddingLeft = '4px'; // Centrado óptico de geometría
         }
       }
 
-      // Interceptor de Handshake para streams de audio
+      // Interceptor de Handshake para audio streams
       playerManager.setMessageInterceptor(
         cast.framework.messages.MessageType.LOAD,
         function(loadRequestData) {
           if (!loadRequestData || !loadRequestData.media) {
             return loadRequestData;
           }
-
           if (!loadRequestData.media.contentType) {
             loadRequestData.media.contentType = 'audio/mpeg'; 
           }
-
           return loadRequestData;
         }
       );
 
-      // Enrutamiento de eventos nativos de la sesión Cast hacia el UI moderno
+      // Sincronización de Eventos de Cast SDK a UI
       playerManager.addEventListener(cast.framework.events.EventType.MEDIA_STATUS, function() {
         updateUI();
         updateBadgeAndButtons();
@@ -489,14 +401,13 @@
         badgeEl.textContent = 'Error';
       });
 
-      // Loop asíncrono para refrescar la barra de tiempo fluida (250ms)
+      // Refresco constante del timeline fluido (250ms)
       setInterval(function() {
         if (playerManager.getPlayerState() === 'PLAYING') {
           updateProgress();
         }
       }, 250);
 
-      // Opciones de configuración de inicialización
       const options = new cast.framework.CastReceiverOptions();
       options.maxInactivity = 3600; 
 
@@ -505,5 +416,5 @@
     })();
   </script>
 </body>
-                </html>
+  </html>
   
